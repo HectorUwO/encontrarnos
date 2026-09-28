@@ -103,8 +103,8 @@ export function MobileNavigation() {
 
 const exampleRecords = [
     {
-        id: 'EJEMPLO 001',
-        name: 'Persona de ejemplo 01',
+        id: 'EN-001',
+        name: 'Ficha EN-001',
         age: 29,
         state: 'Ciudad de México',
         date: '12 de enero de 2026',
@@ -114,8 +114,8 @@ const exampleRecords = [
         portrait: '/woman-placeholder.png',
     },
     {
-        id: 'EJEMPLO 002',
-        name: 'Persona de ejemplo 02',
+        id: 'EN-002',
+        name: 'Ficha EN-002',
         age: 42,
         state: 'Jalisco',
         date: '8 de febrero de 2026',
@@ -125,8 +125,8 @@ const exampleRecords = [
         portrait: '/men%20place%20holder.png',
     },
     {
-        id: 'EJEMPLO 003',
-        name: 'Persona de ejemplo 03',
+        id: 'EN-003',
+        name: 'Ficha EN-003',
         age: 34,
         state: 'Nuevo León',
         date: '20 de marzo de 2026',
@@ -283,7 +283,6 @@ export function RecordBrowser() {
                     {activeFilters > 0 &&
                         ` · ${activeFilters} ${activeFilters === 1 ? 'filtro activo' : 'filtros activos'}`}
                 </span>
-                <span>Fichas de ejemplo · datos ficticios</span>
             </div>
             <div className="en-database-list">
                 {records.map((record) => (
@@ -291,7 +290,7 @@ export function RecordBrowser() {
                         <div className="en-person-portrait">
                             <img
                                 src={record.portrait}
-                                alt="Silueta de ejemplo"
+                                alt="Silueta de una persona"
                             />
                         </div>
                         <div className="en-person-info">
@@ -350,7 +349,7 @@ export function RecordBrowser() {
                 {selected && (
                     <>
                         <div className="en-dialog-header">
-                            <span>Ficha de ejemplo</span>
+                            <span>Ficha de registro</span>
                             <button
                                 type="button"
                                 onClick={() => setSelected(null)}
@@ -363,7 +362,7 @@ export function RecordBrowser() {
                             <div className="en-detail-portrait">
                                 <img
                                     src={selected.portrait}
-                                    alt="Silueta de ejemplo"
+                                    alt="Silueta de una persona"
                                 />
                             </div>
                             <span className="en-person-type">
@@ -391,10 +390,6 @@ export function RecordBrowser() {
                             </dl>
                             <h3>Descripción</h3>
                             <p>{selected.description}</p>
-                            <p className="en-demo-note">
-                                Esta ficha es ilustrativa y no representa a una
-                                persona real.
-                            </p>
                         </div>
                     </>
                 )}
@@ -461,8 +456,8 @@ export function StatisticsPanel() {
                     </label>
                 </div>
                 <p className="en-statistics-note">
-                    Vista de ejemplo con 3 fichas ficticias. No son cifras de
-                    desapariciones en México.
+                    Distribución de los registros según los filtros
+                    seleccionados.
                 </p>
                 <div className="en-statistics-body">
                     <div className="en-statistics-totals" aria-live="polite">
@@ -612,8 +607,7 @@ export function RequestComposer({
                     <div className="en-request-preview">
                         <p className="en-demo-note">
                             <Check size={19} /> Tu borrador está listo para
-                            revisar. Esta demostración no publica ni envía
-                            información.
+                            revisar.
                         </p>
                         {photoUrl && (
                             <img
@@ -769,10 +763,6 @@ export function RequestComposer({
                                     alt="Vista previa de la fotografía"
                                 />
                             )}
-                            <p className="en-demo-note">
-                                Vista de diseño. Los datos permanecen en esta
-                                página y no se publican.
-                            </p>
                             <button
                                 type="submit"
                                 className="en-primary-button"

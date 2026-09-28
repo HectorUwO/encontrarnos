@@ -175,7 +175,7 @@ export default function Welcome({ auth }: PageProps) {
                     </div>
                     <div
                         className="en-poster-wall"
-                        aria-label="Cartel ilustrativo de búsqueda"
+                        aria-label="Cartel de búsqueda"
                     >
                         <div className="en-poster-under" aria-hidden="true">
                             <span>MEMORIA.</span>
@@ -194,16 +194,13 @@ export default function Welcome({ auth }: PageProps) {
                             <div className="en-poster-portrait">
                                 <img
                                     src="/woman-placeholder.png"
-                                    alt="Silueta ilustrativa de una persona"
+                                    alt="Silueta de una persona"
                                 />
                             </div>
                             <div className="en-poster-message">
                                 UNA PERSONA.
                                 <br />
                                 TODA UNA HISTORIA.
-                            </div>
-                            <div className="en-poster-caption">
-                                IMAGEN ILUSTRATIVA
                             </div>
                         </div>
                         <span className="en-poster-stamp" aria-hidden="true">
@@ -398,10 +395,6 @@ export default function Welcome({ auth }: PageProps) {
                                 : 'Seleccionar fotografía'}
                             <ArrowUpRight size={22} />
                         </button>
-                        <p className="en-upload-disclaimer">
-                            Vista de diseño. La fotografía permanece en tu
-                            navegador; no se envía ni se compara todavía.
-                        </p>
                     </div>
                 </section>
 
@@ -452,17 +445,17 @@ export default function Welcome({ auth }: PageProps) {
                                 <div className="en-request-avatar">
                                     <img
                                         src="/men%20place%20holder.png"
-                                        alt="Silueta ilustrativa"
+                                        alt="Silueta de una persona"
                                     />
                                 </div>
                             </div>
                             <span className="en-request-art-label">
-                                FICHA ILUSTRATIVA
+                                SOLICITUD DE IDENTIFICACIÓN
                             </span>
                         </div>
                         <div className="en-request-detail">
                             <span className="en-section-kicker">
-                                TABLÓN DE SOLICITUDES / EJEMPLO
+                                TABLÓN DE SOLICITUDES
                             </span>
                             <h3>¿Reconoces algún dato?</h3>
                             <p>
@@ -491,9 +484,6 @@ export default function Welcome({ auth }: PageProps) {
                             >
                                 Consultar las fichas <ArrowUpRight size={20} />
                             </a>
-                            <p className="en-request-bottom">
-                                Esta solicitud muestra el diseño de una ficha.
-                            </p>
                         </div>
                     </div>
                 </section>
