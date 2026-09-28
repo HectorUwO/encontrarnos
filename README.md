@@ -1,5 +1,5 @@
 ﻿<p align="center">
-  <img src="public/readme-brand.svg" alt="Encontrarnos" width="860" />
+  <img src="public/encontrarnos-marca.png" alt="Encontrarnos" width="860" />
 </p>
 
 # HASTA ENCONTRARNOS.
