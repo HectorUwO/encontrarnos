@@ -133,7 +133,8 @@ html {
     font-weight: 650;
     color: var(--en-ink);
 }
-.en-nav > a:hover {
+.en-nav > a:hover,
+.en-nav > a[aria-current="page"] {
     color: var(--en-red);
 }
 .en-nav .en-nav-account {
@@ -1732,5 +1733,39 @@ html {
     .en-page *::after {
         animation: none !important;
         transition: none !important;
+    }
+}
+.en-footer-country {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.en-flag {
+    height: 20px;
+    width: auto;
+    flex: none;
+}
+.en-footer-logos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 28px;
+}
+.en-footer-bottom {
+    align-items: center;
+}
+.en-footer-legal {
+    display: grid;
+    justify-items: end;
+    gap: 10px;
+}
+.en-footer-logos img {
+    height: 64px;
+    width: auto;
+    object-fit: contain;
+}
+@media (max-width: 700px) {
+    .en-footer-logos img {
+        height: 48px;
     }
 }

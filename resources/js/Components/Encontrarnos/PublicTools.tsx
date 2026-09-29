@@ -1,3 +1,4 @@
+import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowUpRight,
     ChartNoAxesColumnIncreasing,
@@ -14,28 +15,28 @@ import './public-tools.css';
 
 const actions = [
     {
-        href: '#registros',
+        href: '/base-de-datos',
         title: 'Buscar en base de datos',
         short: 'Base de datos',
         description: 'Consulta nombres, lugares y descripciones.',
         icon: Search,
     },
     {
-        href: '#estadisticas',
+        href: '/estadisticas',
         title: 'Estadísticas',
         short: 'Estadísticas',
         description: 'Explora la información por lugar y edad.',
         icon: ChartNoAxesColumnIncreasing,
     },
     {
-        href: '#buscar',
+        href: '/busqueda-por-fotografia',
         title: 'Búsqueda por fotografía',
         short: 'Fotografía',
         description: 'Busca a partir de una imagen.',
         icon: ImagePlus,
     },
     {
-        href: '#solicitudes',
+        href: '/solicitudes',
         title: 'Ver o crear solicitudes',
         short: 'Solicitudes',
         description: 'Consulta solicitudes o prepara una nueva.',
@@ -43,17 +44,13 @@ const actions = [
     },
 ];
 
-export function ActionGrid({
-    fromDashboard = false,
-}: {
-    fromDashboard?: boolean;
-}) {
+export function ActionGrid() {
     return (
         <div className="en-action-grid" aria-label="Acciones principales">
             {actions.map(({ href, title, description, icon: Icon }, index) => (
-                <a
+                <Link
                     key={href}
-                    href={`${fromDashboard ? '/' : ''}${href}`}
+                    href={href}
                     className={`en-action-card ${index === 0 ? 'en-action-primary' : ''}`}
                 >
                     <Icon size={23} aria-hidden="true" />
@@ -62,44 +59,31 @@ export function ActionGrid({
                         <small>{description}</small>
                     </span>
                     <ArrowUpRight size={19} aria-hidden="true" />
-                </a>
+                </Link>
             ))}
         </div>
     );
 }
 
 export function MobileNavigation() {
-    const [active, setActive] = useState('');
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const visible = entries.find((entry) => entry.isIntersecting);
-                if (visible) setActive(`#${visible.target.id}`);
-            },
-            { rootMargin: '-10% 0px -45% 0px' },
-        );
-        actions.forEach(({ href }) => {
-            const section = document.querySelector(href);
-            if (section) observer.observe(section);
-        });
-        return () => observer.disconnect();
-    }, []);
+    const { url } = usePage();
     return (
         <nav className="en-mobile-dock" aria-label="Accesos rápidos">
             {actions.map(({ href, short, icon: Icon }) => (
-                <a
+                <Link
                     href={href}
                     key={href}
-                    aria-current={active === href ? 'location' : undefined}
-                    onClick={() => setActive(href)}
+                    aria-current={url.startsWith(href) ? 'page' : undefined}
                 >
                     <Icon size={23} aria-hidden="true" />
                     <span>{short}</span>
-                </a>
+                </Link>
             ))}
         </nav>
     );
 }
+
+export { actions };
 
 const exampleRecords = [
     {

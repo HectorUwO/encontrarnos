@@ -163,7 +163,7 @@ export default function Dashboard({ auth }: PageProps) {
                         </div>
                     </div>
                     <div id="herramientas">
-                        <ActionGrid fromDashboard />
+                        <ActionGrid />
                     </div>
                     <section className="en-work-registers" id="registros">
                         <div className="en-work-section-top">

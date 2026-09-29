@@ -14,6 +14,11 @@ Route::get('/', function () {
     ]);
 });
 
+Route::inertia('/base-de-datos', 'Public/BaseDeDatos')->name('records');
+Route::inertia('/estadisticas', 'Public/Estadisticas')->name('statistics');
+Route::inertia('/busqueda-por-fotografia', 'Public/BusquedaFotografia')->name('photo-search');
+Route::inertia('/solicitudes', 'Public/Solicitudes')->name('requests');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
