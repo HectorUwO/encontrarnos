@@ -89,36 +89,53 @@ export default function PublicLayout({ children }: PropsWithChildren) {
             <main id="contenido">{children}</main>
 
             <footer className="en-footer">
-                <div className="en-footer-call">
-                    <p>
-                        QUE LA BÚSQUEDA
-                        <br />
-                        <span>NO SE DETENGA.</span>
-                    </p>
-                    <Link href="/" aria-label="Volver al inicio">
-                        <ArrowUpRight size={54} />
-                    </Link>
-                </div>
-                <div className="en-footer-main">
-                    <Link href="/" aria-label="Encontrarnos, volver al inicio">
-                        <Brand light />
-                    </Link>
-                    <div>
-                        {actions.map(({ href, short }) => (
-                            <Link key={href} href={href}>
-                                {short}
+                <div className="en-footer-top">
+                    <div className="en-footer-call">
+                        <div className="en-footer-brandrow">
+                            <Link
+                                href="/"
+                                aria-label="Encontrarnos, volver al inicio"
+                            >
+                                <Brand light />
                             </Link>
-                        ))}
+                            <Link
+                                className="en-footer-home"
+                                href="/"
+                                aria-label="Volver al inicio"
+                            >
+                                <ArrowUpRight size={28} />
+                            </Link>
+                        </div>
+                        <p>
+                            QUE LA BÚSQUEDA
+                            <br />
+                            <span>NO SE DETENGA.</span>
+                        </p>
                     </div>
-                    <div>
-                        <Link href={route(auth.user ? 'dashboard' : 'login')}>
-                            {auth.user ? 'Mi espacio' : 'Ingresar'}
-                        </Link>
-                        <Link
-                            href={route(auth.user ? 'dashboard' : 'register')}
-                        >
-                            Crear cuenta
-                        </Link>
+                    <div className="en-footer-main">
+                        <div>
+                            <p className="en-footer-title">Secciones</p>
+                            {actions.map(({ href, short }) => (
+                                <Link key={href} href={href}>
+                                    {short}
+                                </Link>
+                            ))}
+                        </div>
+                        <div>
+                            <p className="en-footer-title">Cuenta</p>
+                            <Link
+                                href={route(auth.user ? 'dashboard' : 'login')}
+                            >
+                                {auth.user ? 'Mi espacio' : 'Ingresar'}
+                            </Link>
+                            <Link
+                                href={route(
+                                    auth.user ? 'dashboard' : 'register',
+                                )}
+                            >
+                                Crear cuenta
+                            </Link>
+                        </div>
                     </div>
                 </div>
                 <div className="en-footer-bottom">

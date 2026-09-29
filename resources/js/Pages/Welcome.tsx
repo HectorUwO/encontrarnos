@@ -1,10 +1,44 @@
 import { ActionGrid } from '@/Components/Encontrarnos/PublicTools';
+import SkeletonWall from '@/Components/Encontrarnos/SkeletonWall';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { PageProps } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowDown, ArrowUpRight, Plus } from 'lucide-react';
+import { useState } from 'react';
+
+const PARTICIPANTS = [
+    {
+        name: 'Personas y familias',
+        description:
+            'Consulta fichas, comparte datos que puedan ayudar y da seguimiento a la búsqueda de tu ser querido.',
+    },
+    {
+        name: 'Instituciones de seguridad',
+        description:
+            'Coordina información con otras instancias para acelerar la localización y evitar duplicidad de esfuerzos.',
+    },
+    {
+        name: 'Hospitales',
+        description:
+            'Registra el ingreso de personas sin identificar para facilitar que sus familias las encuentren.',
+    },
+    {
+        name: 'Centros de rehabilitación',
+        description:
+            'Aporta datos de personas que se encuentran bajo su cuidado y ayuda a reconectarlas con sus familiares.',
+    },
+    {
+        name: 'Servicios forenses',
+        description:
+            'Comparte información de identificación para cotejarla con reportes de personas desaparecidas.',
+    },
+];
 
 export default function Welcome({ auth }: PageProps) {
+    const [openParticipant, setOpenParticipant] = useState<number | null>(
+        null,
+    );
+
     return (
         <PublicLayout>
             <Head title="Hasta encontrarnos · Búsqueda de personas en México" />
@@ -22,7 +56,7 @@ export default function Welcome({ auth }: PageProps) {
                     </h1>
                     <div className="en-manifesto-bottom">
                         <span className="en-manifesto-cross" aria-hidden="true">
-                            ✳
+                            <img src="/1.png" alt="" />
                         </span>
                         <div>
                             <p>
@@ -47,37 +81,7 @@ export default function Welcome({ auth }: PageProps) {
                         </div>
                     </div>
                 </div>
-                <div className="en-poster-wall" aria-label="Cartel de búsqueda">
-                    <div className="en-poster-under" aria-hidden="true">
-                        <span>MEMORIA.</span>
-                        <span>PRESENCIA.</span>
-                    </div>
-                    <div className="en-search-poster">
-                        <div className="en-poster-eyebrow">
-                            <span>ENCONTRARNOS / MÉXICO</span>
-                            <Plus size={20} />
-                        </div>
-                        <h2>
-                            LA BÚSQUEDA
-                            <br />
-                            SIGUE.
-                        </h2>
-                        <div className="en-poster-portrait">
-                            <img
-                                src="/woman-placeholder.png"
-                                alt="Silueta de una persona"
-                            />
-                        </div>
-                        <div className="en-poster-message">
-                            UNA PERSONA.
-                            <br />
-                            TODA UNA HISTORIA.
-                        </div>
-                    </div>
-                    <span className="en-poster-stamp" aria-hidden="true">
-                        NO OLVIDAR.
-                    </span>
-                </div>
+                <SkeletonWall />
                 <div className="en-manifesto-foot">
                     <span>La información también ayuda a buscar.</span>
                     <a href="#acciones">
@@ -125,19 +129,38 @@ export default function Welcome({ auth }: PageProps) {
                 </div>
                 <div className="en-participants">
                     <p>UN ESPACIO PARA</p>
-                    {[
-                        'Personas y familias',
-                        'Instituciones de seguridad',
-                        'Hospitales',
-                        'Centros de rehabilitación',
-                        'Servicios forenses',
-                    ].map((name, index) => (
-                        <div className="en-participant" key={name}>
-                            <span>0{index + 1}</span>
-                            <h3>{name}</h3>
-                            <Plus size={23} aria-hidden="true" />
-                        </div>
-                    ))}
+                    {PARTICIPANTS.map(({ name, description }, index) => {
+                        const isOpen = openParticipant === index;
+                        return (
+                            <div
+                                className={`en-participant${isOpen ? ' is-open' : ''}`}
+                                key={name}
+                            >
+                                <button
+                                    type="button"
+                                    className="en-participant-toggle"
+                                    aria-expanded={isOpen}
+                                    aria-controls={`participant-${index}`}
+                                    onClick={() =>
+                                        setOpenParticipant(
+                                            isOpen ? null : index,
+                                        )
+                                    }
+                                >
+                                    <span>0{index + 1}</span>
+                                    <h3>{name}</h3>
+                                    <Plus size={23} aria-hidden="true" />
+                                </button>
+                                <div
+                                    className="en-participant-panel"
+                                    id={`participant-${index}`}
+                                    role="region"
+                                >
+                                    <p>{description}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
         </PublicLayout>

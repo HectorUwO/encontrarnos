@@ -37,7 +37,28 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                         <br />
                         CON QUIENES BUSCAN.
                     </span>
-                    <span aria-hidden="true">✳</span>
+                    <div className="en-auth-allies" aria-label="Instituciones aliadas">
+                        <a
+                            href="https://www.facebook.com/LSPUTNay"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            <img
+                                src="/LSPlogo-footer.png"
+                                alt="Licenciatura en Seguridad Pública"
+                            />
+                        </a>
+                        <a
+                            href="https://www.utnay.edu.mx/"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            <img
+                                src="/UTlogo.png"
+                                alt="Universidad Tecnológica de Nayarit"
+                            />
+                        </a>
+                    </div>
                 </div>
             </aside>
             <main className="en-auth-main">

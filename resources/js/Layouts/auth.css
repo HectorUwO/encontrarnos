@@ -470,9 +470,19 @@
     font-weight: 700;
     line-height: 1.6;
 }
-.en-auth-solidarity > span:last-child {
-    font-size: 65px;
-    line-height: 1;
+.en-auth-allies {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.en-auth-allies a {
+    line-height: 0;
+}
+.en-auth-allies img {
+    display: block;
+    height: 56px;
+    width: auto;
+    object-fit: contain;
 }
 .en-auth-shell .en-auth-main {
     background: #f0ecdf;
