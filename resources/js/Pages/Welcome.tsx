@@ -56,7 +56,7 @@ export default function Welcome({ auth }: PageProps) {
                     </h1>
                     <div className="en-manifesto-bottom">
                         <span className="en-manifesto-cross" aria-hidden="true">
-                            <img src="/1.png" alt="" />
+                            <img src="/3.png" alt="" />
                         </span>
                         <div>
                             <p>
@@ -156,7 +156,9 @@ export default function Welcome({ auth }: PageProps) {
                                     id={`participant-${index}`}
                                     role="region"
                                 >
-                                    <p>{description}</p>
+                                    <div>
+                                        <p>{description}</p>
+                                    </div>
                                 </div>
                             </div>
                         );

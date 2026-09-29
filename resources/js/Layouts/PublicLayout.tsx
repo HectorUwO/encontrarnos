@@ -39,11 +39,6 @@ export default function PublicLayout({ children }: PropsWithChildren) {
             <a href="#contenido" className="en-skip-link">
                 Ir al contenido
             </a>
-            <div className="en-topline">
-                <span>MÉXICO</span>
-                <span>Buscar. Identificar. Compartir.</span>
-                <span>LA BÚSQUEDA NOS CONCIERNE.</span>
-            </div>
             <header className="en-header">
                 <Link href="/" aria-label="Encontrarnos, ir al inicio">
                     <Brand />
