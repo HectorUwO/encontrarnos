@@ -2,10 +2,13 @@
 
 namespace App\Enums;
 
+use App\Enums\Concerns\HasOptions;
 use Illuminate\Support\Str;
 
 enum DisappearanceStatus: string
 {
+    use HasOptions;
+
     case Disappeared = 'disappeared';
     case NotLocated = 'not_located';
 

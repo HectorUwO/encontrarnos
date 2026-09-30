@@ -57,8 +57,8 @@ class ImportRnpdnoRecordsTest extends TestCase
     }
 
     /**
-     * Campos de una ficha típica; los últimos son datos personales que la
-     * aplicación no debe importar.
+     * Campos de una ficha típica; los últimos son datos personales que también
+     * se guardan (quién los ve lo decide la aplicación).
      *
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
@@ -157,17 +157,59 @@ class ImportRnpdnoRecordsTest extends TestCase
         $this->assertNotNull($record->published_at);
     }
 
-    public function test_does_not_import_addresses_or_birth_data(): void
+    public function test_imports_the_personal_data_and_the_registry_identifiers(): void
     {
-        $this->addReport(1, $this->ficha());
+        $this->addReport(1, $this->ficha([
+            'Nacionalidad' => 'MEXICANA',
+            'iddependenciaorigen' => 57,
+            'PertenenciaPorCanalizacion' => 'FISCALIA A|FISCALIA B',
+            'fechacaptura' => '5/15/2024',
+        ]), victimId: 'BE74EF5E-38B4-4D37-84E0-E49B45504C10');
 
         $this->artisan('records:import-rnpdno')->assertSuccessful();
 
-        $stored = json_encode(PersonRecord::query()->sole()->getAttributes(), JSON_UNESCAPED_UNICODE);
+        $record = PersonRecord::query()->sole();
 
-        $this->assertStringNotContainsString('SECRETA', $stored);
-        $this->assertStringNotContainsString('SECRETO', $stored);
-        $this->assertStringNotContainsString('1990', $stored);
+        $this->assertSame('CALLE SECRETA', $record->street);
+        $this->assertSame('COLONIA SECRETA', $record->neighborhood);
+        $this->assertSame('LUGAR SECRETO', $record->birth_place);
+        $this->assertSame('1990-01-02', $record->birth_date->toDateString());
+        $this->assertSame('MEXICANA', $record->nationality);
+        $this->assertSame('2024-05-15', $record->registered_date->toDateString());
+        $this->assertSame(['FISCALIA A', 'FISCALIA B'], $record->referred_to);
+        $this->assertSame(57, $record->source_authority_id);
+        $this->assertSame('BE74EF5E-38B4-4D37-84E0-E49B45504C10', $record->source_victim_id);
+        // Los identificadores se guardan, pero el modelo nunca los serializa.
+        $this->assertArrayNotHasKey('source_victim_id', $record->toArray());
+        $this->assertArrayNotHasKey('source_authority_id', $record->toArray());
+    }
+
+    public function test_by_default_only_the_records_authorized_by_the_registry_are_published(): void
+    {
+        $this->addReport(1, $this->ficha(['PublicarFicha' => 'SI']));
+        $this->addReport(2, $this->ficha(['PublicarFicha' => 'SIN DATO']));
+        $this->addReport(3, $this->ficha(['PublicarFicha' => 'NO']));
+
+        $this->artisan('records:import-rnpdno')->assertSuccessful();
+
+        $this->assertSame(1, PersonRecord::query()->published()->count());
+        $this->assertSame(['NO', 'SI', 'SIN DATO'], PersonRecord::query()->orderBy('registry_publish')->pluck('registry_publish')->all());
+    }
+
+    public function test_publishing_all_keeps_what_the_registry_said(): void
+    {
+        config(['services.records_publish' => 'all']);
+        $this->addReport(1, $this->ficha(['PublicarFicha' => 'SI']));
+        $this->addReport(2, $this->ficha(['PublicarFicha' => 'SIN DATO']));
+        $this->addReport(3, $this->ficha(['PublicarFicha' => 'NO']));
+
+        $this->artisan('records:import-rnpdno')->assertSuccessful();
+
+        $this->assertSame(3, PersonRecord::query()->published()->count());
+        $this->assertSame(
+            ['NO' => 1, 'SI' => 1, 'SIN DATO' => 1],
+            PersonRecord::query()->pluck('registry_publish')->countBy()->sortKeys()->all(),
+        );
     }
 
     public function test_skips_reports_that_are_not_complete(): void

@@ -28,6 +28,8 @@
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="ADMIN_NOTIFICATION_EMAIL" value=""/>
+        <env name="RECORDS_PUBLISH" value="registry"/>
+        <env name="RECORDS_SENSITIVE" value="admins"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="RECORDS_SEARCH" value="database"/>
         <env name="RECORDS_FULLTEXT" value="false"/>

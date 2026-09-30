@@ -145,3 +145,24 @@ export function elapsedSince(
     return `${days} ${days === 1 ? 'día' : 'días'}`;
 }
 
+/** «Sí» / «No»; null cuando no se sabe. */
+export const yesNo = (value: boolean | null | undefined): string | null =>
+    value === null || value === undefined ? null : value ? 'Sí' : 'No';
+
+/** «17 años, 1 mes y 3 días» a partir de las partes que se conozcan. */
+export function ageParts(
+    years: number | null,
+    months: number | null,
+    days: number | null,
+): string | null {
+    const parts = [
+        years !== null ? `${years} ${years === 1 ? 'año' : 'años'}` : null,
+        months !== null ? `${months} ${months === 1 ? 'mes' : 'meses'}` : null,
+        days !== null ? `${days} ${days === 1 ? 'día' : 'días'}` : null,
+    ].filter((part): part is string => part !== null);
+
+    if (parts.length === 0) return null;
+    if (parts.length === 1) return parts[0];
+
+    return `${parts.slice(0, -1).join(', ')} y ${parts[parts.length - 1]}`;
+}

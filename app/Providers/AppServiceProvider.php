@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Services\PhotoSearch\NullPhotoMatcher;
 use App\Services\PhotoSearch\PhotoMatcher;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +26,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Único punto donde se decide quién ve los datos personales (nacimiento
+        // y domicilio) de una ficha. Cuando haya roles más finos, se cambia aquí.
+        // Lo que el registro dijo sobre publicar una ficha (SI, NO, SIN DATO) es
+        // información de administración: los demás ni siquiera lo reciben.
+        Gate::define('view-registry-publication', fn (?User $user): bool => (bool) $user?->is_admin);
+
+        Gate::define('view-sensitive-record-data', fn (?User $user): bool => match (config('services.records_sensitive')) {
+            'all' => true,
+            'authenticated' => $user !== null,
+            default => (bool) $user?->is_admin,
+        });
+
         RateLimiter::for('person-requests', fn (Request $request): Limit => Limit::perHour(5)
             ->by($request->user()?->id ?: $request->ip()));
 

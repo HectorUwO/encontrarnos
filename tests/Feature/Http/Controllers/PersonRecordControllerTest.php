@@ -6,6 +6,7 @@ use App\Enums\AgeRange;
 use App\Enums\MexicanState;
 use App\Enums\Sex;
 use App\Models\PersonRecord;
+use App\Models\User;
 use App\Services\Photos\PhotoCache;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -131,6 +132,110 @@ class PersonRecordControllerTest extends TestCase
             ->where('record.data.authority', 'Fiscalía de Jalisco')
             ->missing('record.data.source_victim_id'));
         $this->assertStringNotContainsString('BE74EF5E', $response->getContent());
+    }
+
+    public function test_the_ficha_shows_the_registry_data_but_never_the_source_identifiers(): void
+    {
+        PersonRecord::factory()->create([
+            'folio' => 'EN-000500',
+            'nationality' => 'MEXICANA',
+            'speaks_spanish' => true,
+            'origin' => 'CARGA MASIVA',
+            'referred_to' => ['FISCALIA A', 'FISCALIA B'],
+            'registered_age_years' => 17,
+            'registered_date' => '2024-05-15',
+            'source_victim_id' => 'BE74EF5E-38B4-4D37-84E0-E49B45504C10',
+            'source_report_id' => 7,
+            'source_agency_id' => 44,
+            'source_authority_id' => 57,
+        ]);
+
+        $response = $this->get(route('records.show', 'EN-000500'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('record.data.nationality', 'MEXICANA')
+            ->where('record.data.speaks_spanish', true)
+            ->where('record.data.origin', 'CARGA MASIVA')
+            ->where('record.data.referred_to', ['FISCALIA A', 'FISCALIA B'])
+            ->where('record.data.registered_age.years', 17)
+            ->where('record.data.registered_date_label', '15 de mayo de 2024')
+            ->missingAll([
+                'record.data.source_victim_id', 'record.data.source_report_id',
+                'record.data.source_agency_id', 'record.data.source_authority_id',
+            ]));
+        $this->assertStringNotContainsString('BE74EF5E', $response->getContent());
+    }
+
+    /**
+     * @return array<string, array{string, string, bool}>
+     */
+    public static function sensitiveVisibility(): array
+    {
+        return [
+            'admins only: guest' => ['admins', 'guest', false],
+            'admins only: regular user' => ['admins', 'user', false],
+            'admins only: admin' => ['admins', 'admin', true],
+            'authenticated: guest' => ['authenticated', 'guest', false],
+            'authenticated: regular user' => ['authenticated', 'user', true],
+            'all: guest' => ['all', 'guest', true],
+        ];
+    }
+
+    #[DataProvider('sensitiveVisibility')]
+    public function test_personal_data_follows_the_sensitive_visibility_setting(string $setting, string $who, bool $visible): void
+    {
+        config(['services.records_sensitive' => $setting]);
+        PersonRecord::factory()->create([
+            'folio' => 'EN-000600',
+            'street' => 'CALLE UNO',
+            'birth_date' => '1990-05-08',
+        ]);
+
+        $user = match ($who) {
+            'admin' => User::factory()->create(['is_admin' => true]),
+            'user' => User::factory()->create(),
+            default => null,
+        };
+
+        $response = ($user ? $this->actingAs($user) : $this)->get(route('records.show', 'EN-000600'));
+
+        if ($visible) {
+            $response->assertInertia(fn (Assert $page) => $page
+                ->where('record.data.sensitive_restricted', false)
+                ->where('record.data.sensitive.street', 'CALLE UNO')
+                ->where('record.data.sensitive.birth_date_label', '8 de mayo de 1990'));
+            $this->assertStringContainsString('CALLE UNO', $response->getContent());
+        } else {
+            $response->assertInertia(fn (Assert $page) => $page
+                ->where('record.data.sensitive_restricted', true)
+                ->where('record.data.sensitive', null));
+            $this->assertStringNotContainsString('CALLE UNO', $response->getContent());
+        }
+    }
+
+    public function test_what_the_registry_said_about_publishing_is_only_sent_to_admins(): void
+    {
+        PersonRecord::factory()->create(['folio' => 'EN-000700', 'registry_publish' => 'SIN DATO']);
+
+        $this->get(route('records.show', 'EN-000700'))
+            ->assertInertia(fn (Assert $page) => $page->missing('record.data.registry_publish'));
+
+        $this->actingAs(User::factory()->create())->get(route('records.show', 'EN-000700'))
+            ->assertInertia(fn (Assert $page) => $page->missing('record.data.registry_publish'));
+
+        $this->actingAs(User::factory()->create(['is_admin' => true]))->get(route('records.show', 'EN-000700'))
+            ->assertInertia(fn (Assert $page) => $page->where('record.data.registry_publish', 'SIN DATO'));
+    }
+
+    public function test_personal_data_never_appears_in_the_catalog_listing(): void
+    {
+        config(['services.records_sensitive' => 'all']);
+        PersonRecord::factory()->create(['street' => 'CALLE UNO', 'birth_date' => '1990-05-08', 'neighborhood' => 'CENTRO']);
+
+        $response = $this->get(route('records'));
+
+        $this->assertStringNotContainsString('CALLE UNO', $response->getContent());
+        $this->assertStringNotContainsString('1990-05-08', $response->getContent());
     }
 
     public function test_an_unpublished_or_unknown_ficha_is_not_found(): void

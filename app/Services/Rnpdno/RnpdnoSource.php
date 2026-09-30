@@ -16,31 +16,58 @@ use Illuminate\Support\Facades\DB;
 class RnpdnoSource
 {
     /**
-     * Campos de la ficha que se leen. El resto (domicilio, datos de
-     * nacimiento, imágenes incrustadas en base64...) nunca se consulta.
+     * Campos de la ficha que se leen: todo lo que trae el registro salvo las
+     * imágenes incrustadas en base64 (`imagen*`, `pleca_segob`), que pesan
+     * megas y ya se guardan aparte como archivo.
      *
      * @var list<string>
      */
     public const FIELD_KEYS = [
+        // Identificación y descripción.
         'nombre',
         'primerapellido',
         'segundoapellido',
         'Sexo',
         'edadHechos',
         'edadanios',
+        'edadmeses',
+        'edaddias',
         'edadActual',
+        'MediaFiliacion',
+        'PrendasDeVestir',
+        'SanaParticular',
+        'Nacionalidad',
+        'hablaespaniol',
+        'TieneDiscapacidad',
+        'TipoDiscapacidad',
+        // Hechos y trámite.
         'estadoHecho',
         'estado',
         'municipioHecho',
         'municipio',
         'ffechahechos',
         'fechahechos',
-        'MediaFiliacion',
-        'PrendasDeVestir',
-        'SanaParticular',
+        'ffechapercato',
+        'fechapercato',
+        'fechacaptura',
+        'fechaAct',
         'EstatusVictima',
         'PublicarFicha',
+        'SoloBusqueda',
+        'Inicio',
+        'archivomigracion',
         'PertenenciaDependenicaOrigen',
+        'PertenenciaPorCanalizacion',
+        'iddependenciaorigen',
+        // Datos personales sensibles.
+        'fechanacimiento',
+        'estadonacimiento',
+        'lugarnacimiento',
+        'calle',
+        'noexterior',
+        'nointerior',
+        'codigopostal',
+        'nombreasentamiento',
     ];
 
     public function __construct(private readonly string $connection = 'rnpdno') {}

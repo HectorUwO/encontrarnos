@@ -35,14 +35,38 @@ use Illuminate\Support\Str;
     'clothing',
     'distinguishing_marks',
     'authority',
+    'origin',
+    'search_only',
+    'referred_to',
+    'migration_file',
+    'noticed_date',
+    'registered_date',
+    'source_updated_at',
+    'registered_age_years',
+    'registered_age_months',
+    'registered_age_days',
+    'nationality',
+    'speaks_spanish',
+    'has_disability',
+    'disability_type',
+    'birth_date',
+    'birth_state',
+    'birth_place',
+    'street',
+    'exterior_number',
+    'interior_number',
+    'postal_code',
+    'neighborhood',
+    'source_authority_id',
     'photo_sha256',
     'photo_path',
     'source_victim_id',
     'source_report_id',
     'source_agency_id',
     'published_at',
+    'registry_publish',
 ])]
-#[Hidden(['source_victim_id', 'source_report_id', 'source_agency_id'])]
+#[Hidden(['source_victim_id', 'source_report_id', 'source_agency_id', 'source_authority_id'])]
 #[RouteKey('folio')]
 class PersonRecord extends Model
 {
@@ -133,6 +157,14 @@ class PersonRecord extends Model
             'sex' => Sex::class,
             'state' => MexicanState::class,
             'event_date' => 'date',
+            'noticed_date' => 'date',
+            'registered_date' => 'date',
+            'source_updated_at' => 'datetime',
+            'birth_date' => 'date',
+            'search_only' => 'boolean',
+            'speaks_spanish' => 'boolean',
+            'has_disability' => 'boolean',
+            'referred_to' => 'array',
             'traits' => 'array',
             'published_at' => 'datetime',
         ];
@@ -275,6 +307,111 @@ class PersonRecord extends Model
         if ($maximum !== null) {
             $query->where('age', '<=', $maximum);
         }
+    }
+
+    #[Scope]
+    protected function ageBetween(Builder $query, ?int $from, ?int $to): void
+    {
+        if ($from !== null) {
+            $query->where('age', '>=', $from);
+        }
+
+        if ($to !== null) {
+            $query->where('age', '<=', $to);
+        }
+    }
+
+    #[Scope]
+    protected function ofSex(Builder $query, ?Sex $sex): void
+    {
+        if ($sex !== null) {
+            $query->where('sex', $sex);
+        }
+    }
+
+    #[Scope]
+    protected function withStatus(Builder $query, ?DisappearanceStatus $status): void
+    {
+        if ($status !== null) {
+            $query->where('disappearance_status', $status);
+        }
+    }
+
+    #[Scope]
+    protected function withPhotograph(Builder $query, bool $only): void
+    {
+        if ($only) {
+            $query->whereNotNull('photo_path');
+        }
+    }
+
+    #[Scope]
+    protected function eventBetween(Builder $query, ?string $from, ?string $to): void
+    {
+        if ($from !== null) {
+            $query->where('event_date', '>=', $from);
+        }
+
+        if ($to !== null) {
+            $query->where('event_date', '<=', $to);
+        }
+    }
+
+    #[Scope]
+    protected function inMunicipality(Builder $query, ?string $municipality): void
+    {
+        if ($municipality !== null) {
+            $query->where('municipality', 'like', '%'.addcslashes($municipality, '\\%_').'%');
+        }
+    }
+
+    #[Scope]
+    protected function byAuthority(Builder $query, ?string $authority): void
+    {
+        if ($authority !== null) {
+            $query->where('authority', 'like', '%'.addcslashes($authority, '\\%_').'%');
+        }
+    }
+
+    #[Scope]
+    protected function ofNationality(Builder $query, ?string $nationality): void
+    {
+        if ($nationality !== null) {
+            $query->where('nationality', $nationality);
+        }
+    }
+
+    #[Scope]
+    protected function withDisabilityOnly(Builder $query, bool $only): void
+    {
+        if ($only) {
+            $query->where('has_disability', true);
+        }
+    }
+
+    #[Scope]
+    protected function registryPublishIs(Builder $query, ?string $value): void
+    {
+        if ($value !== null) {
+            $query->where('registry_publish', $value);
+        }
+    }
+
+    /**
+     * Orden del catálogo. Los datos que faltan (sin fecha, sin edad) van al
+     * final, se ordene como se ordene.
+     */
+    #[Scope]
+    protected function sortedBy(Builder $query, string $sort): void
+    {
+        match ($sort) {
+            'oldest' => $query->orderByRaw('event_date is null')->orderBy('event_date')->orderBy('id'),
+            'name' => $query->orderBy('name')->orderBy('id'),
+            'age_asc' => $query->orderByRaw('age is null')->orderBy('age')->orderBy('id'),
+            'age_desc' => $query->orderByRaw('age is null')->orderByDesc('age')->orderBy('id'),
+            'added' => $query->orderByDesc('published_at')->orderByDesc('id'),
+            default => $query->orderByDesc('event_date')->orderByDesc('id'),
+        };
     }
 
     /**

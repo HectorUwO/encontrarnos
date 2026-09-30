@@ -73,7 +73,7 @@ class ImportRnpdnoRecords extends Command
                     'source_victim_id' => $report['victim_id'],
                     'source_report_id' => $report['report_id'],
                     'source_agency_id' => $report['agency_id'],
-                    'publishable' => $mapper->isPublishable($report['fields']),
+                    'publishable' => $this->shouldPublish($mapper->isPublishable($report['fields'])),
                 ];
             }
 
@@ -91,8 +91,8 @@ class ImportRnpdnoRecords extends Command
         $this->newLine(2);
         $this->components->twoColumnDetail('Fichas nuevas', number_format($totals['created']));
         $this->components->twoColumnDetail('Fichas actualizadas', number_format($totals['updated']));
-        $this->components->twoColumnDetail('Publicables (visibles)', number_format($totals['published']));
-        $this->components->twoColumnDetail('No publicables (ocultas)', number_format($totals['unpublished']));
+        $this->components->twoColumnDetail('Publicadas (visibles)', number_format($totals['published']));
+        $this->components->twoColumnDetail('Ocultas', number_format($totals['unpublished']));
         $this->components->twoColumnDetail('Con fotografía', number_format($totals['with_photo']));
         $this->components->twoColumnDetail('Omitidas por falta de datos', number_format($totals['skipped']));
 
@@ -168,6 +168,15 @@ class ImportRnpdnoRecords extends Command
                 $totals['with_photo']++;
             }
         }
+    }
+
+    /**
+     * Con `RECORDS_PUBLISH=all` se publican todas las fichas; el dato del
+     * registro queda guardado en `registry_publish`.
+     */
+    private function shouldPublish(bool $authorizedByRegistry): bool
+    {
+        return config('services.records_publish') === 'all' || $authorizedByRegistry;
     }
 
     private function nextFolio(): string

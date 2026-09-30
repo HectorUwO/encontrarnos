@@ -20,11 +20,16 @@ class RecordSearch
 
     public function paginate(?string $term, ?MexicanState $state, ?AgeRange $range, int $perPage): LengthAwarePaginator
     {
-        $term = trim((string) $term);
+        return $this->search(new RecordQuery(term: $term, state: $state, ageRange: $range), $perPage);
+    }
 
-        if ($term !== '' && $this->meilisearch->enabled()) {
+    public function search(RecordQuery $query, int $perPage): LengthAwarePaginator
+    {
+        $term = trim((string) $query->term);
+
+        if ($term !== '' && ! $query->needsDatabase() && $this->meilisearch->enabled()) {
             try {
-                return $this->fromMeilisearch($term, $state, $range, $perPage);
+                return $this->fromMeilisearch($term, $query->state, $query->ageRange, $perPage);
             } catch (Throwable $exception) {
                 $this->meilisearch->markDown();
 
@@ -35,9 +40,19 @@ class RecordSearch
         return PersonRecord::query()
             ->published()
             ->search($term)
-            ->inState($state)
-            ->inAgeRange($range)
-            ->latestEvents()
+            ->inState($query->state)
+            ->inAgeRange($query->ageRange)
+            ->ageBetween($query->ageFrom, $query->ageTo)
+            ->ofSex($query->sex)
+            ->withStatus($query->status)
+            ->withPhotograph($query->withPhoto)
+            ->eventBetween($query->from, $query->to)
+            ->inMunicipality($query->municipality)
+            ->byAuthority($query->authority)
+            ->ofNationality($query->nationality)
+            ->withDisabilityOnly($query->withDisability)
+            ->registryPublishIs($query->registryPublish)
+            ->sortedBy($query->sort)
             ->paginate($perPage);
     }
 

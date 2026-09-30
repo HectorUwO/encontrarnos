@@ -14,10 +14,10 @@ use Illuminate\Support\Str;
  * Convierte los campos de una ficha del registro nacional en atributos de
  * PersonRecord.
  *
- * Solo se toman los datos que muestra la ficha pública. El domicilio, la fecha
- * y el lugar de nacimiento y el resto de datos personales que trae el registro
- * se dejan fuera a propósito; cuando se decida qué más publicar basta con
- * agregarlos aquí.
+ * Se guarda todo lo que trae el registro, incluidos los datos personales
+ * (nacimiento y domicilio): quién los puede ver se decide en la aplicación
+ * (habilidad `view-sensitive-record-data`), no aquí. Los identificadores del
+ * registro también se guardan, pero nunca salen de la aplicación.
  */
 class RnpdnoRecordMapper
 {
@@ -54,6 +54,31 @@ class RnpdnoRecordMapper
             'clothing' => $clothing,
             'distinguishing_marks' => $marks,
             'authority' => $this->text($fields['PertenenciaDependenicaOrigen'] ?? null),
+            'registry_publish' => $this->registryPublish($fields['PublicarFicha'] ?? null),
+            'origin' => $this->text($fields['Inicio'] ?? null),
+            'search_only' => $this->boolean($fields['SoloBusqueda'] ?? null),
+            'referred_to' => $this->referrals($fields['PertenenciaPorCanalizacion'] ?? null),
+            'migration_file' => $this->text($fields['archivomigracion'] ?? null),
+            'noticed_date' => $this->flexibleDate($fields['ffechapercato'] ?? null, true)
+                ?? $this->flexibleDate($fields['fechapercato'] ?? null),
+            'registered_date' => $this->flexibleDate($fields['fechacaptura'] ?? null),
+            'source_updated_at' => $this->dateTime($fields['fechaAct'] ?? null),
+            'registered_age_years' => $this->age($fields['edadanios'] ?? null),
+            'registered_age_months' => $this->smallNumber($fields['edadmeses'] ?? null, 11),
+            'registered_age_days' => $this->smallNumber($fields['edaddias'] ?? null, 31),
+            'nationality' => $this->text($fields['Nacionalidad'] ?? null),
+            'speaks_spanish' => $this->boolean($fields['hablaespaniol'] ?? null),
+            'has_disability' => $this->boolean($fields['TieneDiscapacidad'] ?? null),
+            'disability_type' => $this->text($fields['TipoDiscapacidad'] ?? null),
+            'birth_date' => $this->flexibleDate($fields['fechanacimiento'] ?? null),
+            'birth_state' => $this->text($fields['estadonacimiento'] ?? null),
+            'birth_place' => $this->text($fields['lugarnacimiento'] ?? null),
+            'street' => $this->text($fields['calle'] ?? null),
+            'exterior_number' => $this->text($fields['noexterior'] ?? null),
+            'interior_number' => $this->text($fields['nointerior'] ?? null),
+            'postal_code' => $this->text($fields['codigopostal'] ?? null),
+            'neighborhood' => $this->text($fields['nombreasentamiento'] ?? null),
+            'source_authority_id' => $this->smallNumber($fields['iddependenciaorigen'] ?? null, 4294967295),
         ];
     }
 
@@ -202,5 +227,112 @@ class RnpdnoRecordMapper
         }
 
         return $sentences === [] ? null : implode(' ', $sentences);
+    }
+
+    /**
+     * «SI» / «NO»; cualquier otra cosa («*», «SIN DATO») es desconocido.
+     */
+    private function boolean(mixed $value): ?bool
+    {
+        return match ($this->normalize($this->string($value))) {
+            'SI' => true,
+            'NO' => false,
+            default => null,
+        };
+    }
+
+    private function smallNumber(mixed $value, int $maximum): ?int
+    {
+        if (! is_scalar($value) || preg_match('/^\s*(\d{1,10})\s*$/', (string) $value, $matches) !== 1) {
+            return null;
+        }
+
+        $number = (int) $matches[1];
+
+        return $number <= $maximum ? $number : null;
+    }
+
+    /**
+     * Las autoridades a las que se remitió el caso llegan separadas por «|».
+     *
+     * @return string|null JSON con la lista, o null si no hay
+     */
+    private function referrals(mixed $value): ?string
+    {
+        $items = collect(explode('|', (string) $this->string($value)))
+            ->map(fn (string $item): ?string => $this->text($item))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return $items === [] ? null : json_encode($items, JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Fecha en cualquiera de los formatos del registro: ISO, «06/04/2024»
+     * (día primero) o «4/6/2024» (mes primero). Si un número mayor a 12 lo
+     * aclara se respeta; si no, se usa el orden que indica `$dayFirst`.
+     */
+    private function flexibleDate(mixed $value, bool $dayFirst = false): ?string
+    {
+        $text = trim((string) $this->string($value));
+
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $text, $iso) === 1) {
+            return $this->validDate((int) $iso[1], (int) $iso[2], (int) $iso[3]);
+        }
+
+        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})#', $text, $parts) !== 1) {
+            return null;
+        }
+
+        [$first, $second, $year] = [(int) $parts[1], (int) $parts[2], (int) $parts[3]];
+        $isDayFirst = $first > 12 ? true : ($second > 12 ? false : $dayFirst);
+
+        return $isDayFirst
+            ? $this->validDate($year, $second, $first)
+            : $this->validDate($year, $first, $second);
+    }
+
+    private function validDate(int $year, int $month, int $day): ?string
+    {
+        if (! checkdate($month, $day, $year) || $year < 1900 || $year > now()->addYear()->year) {
+            return null;
+        }
+
+        return sprintf('%04d-%02d-%02d', $year, $month, $day);
+    }
+
+    /**
+     * «28/9/2026, 19:15:21» (día primero, como lo escribe el registro).
+     */
+    private function dateTime(mixed $value): ?string
+    {
+        $text = trim((string) $this->string($value));
+
+        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?#', $text, $parts) !== 1) {
+            return null;
+        }
+
+        $date = $this->flexibleDate($parts[1].'/'.$parts[2].'/'.$parts[3], true);
+
+        if ($date === null || (int) $parts[4] > 23 || (int) $parts[5] > 59) {
+            return null;
+        }
+
+        return sprintf('%s %02d:%02d:%02d', $date, (int) $parts[4], (int) $parts[5], (int) ($parts[6] ?? 0));
+    }
+
+    /**
+     * Lo que dice el registro sobre publicar la ficha: SI, NO o SIN DATO.
+     */
+    private function registryPublish(mixed $value): ?string
+    {
+        return match ($this->normalize($this->string($value))) {
+            'SI' => 'SI',
+            'NO' => 'NO',
+            '' => null,
+            default => 'SIN DATO',
+        };
     }
 }

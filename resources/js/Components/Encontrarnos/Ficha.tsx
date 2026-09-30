@@ -119,6 +119,27 @@ export function FichaTraits({
     );
 }
 
+/**
+ * Tabla de datos etiquetados. Los datos que no se tienen aparecen como «Sin
+ * dato» para dejar claro que el registro no los trae.
+ */
+export function FichaData({
+    rows,
+}: {
+    rows: [string, string | null | undefined][];
+}) {
+    return (
+        <dl className="req-datasheet">
+            {rows.map(([label, value]) => (
+                <div key={label} className={classNames(!value && 'is-empty')}>
+                    <dt>{label}</dt>
+                    <dd>{value || 'Sin dato'}</dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
 export function FichaShell({
     accent,
     crumbs,

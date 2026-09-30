@@ -48,6 +48,38 @@ export interface PersonRecord {
     portrait_large: string;
 }
 
+export interface PersonRecordDetail extends PersonRecord {
+    /** Solo llega a administradores. */
+    registry_publish?: 'SI' | 'NO' | 'SIN DATO' | null;
+    noticed_date_label: string | null;
+    registered_date_label: string | null;
+    source_updated_at_label: string | null;
+    origin: string | null;
+    search_only: boolean | null;
+    referred_to: string[];
+    migration_file: string | null;
+    registered_age: {
+        years: number | null;
+        months: number | null;
+        days: number | null;
+    };
+    nationality: string | null;
+    speaks_spanish: boolean | null;
+    has_disability: boolean | null;
+    disability_type: string | null;
+    sensitive_restricted: boolean;
+    sensitive: {
+        birth_date_label: string | null;
+        birth_state: string | null;
+        birth_place: string | null;
+        street: string | null;
+        exterior_number: string | null;
+        interior_number: string | null;
+        postal_code: string | null;
+        neighborhood: string | null;
+    } | null;
+}
+
 export interface Paginated<T> {
     data: T[];
     links: {
@@ -70,18 +102,43 @@ export interface RecordFilters {
     q: string | null;
     state: string | null;
     age: string | null;
+    age_from: number | null;
+    age_to: number | null;
+    sex: string | null;
+    status: string | null;
+    photo: boolean | null;
+    from: string | null;
+    to: string | null;
+    municipality: string | null;
+    authority: string | null;
+    nationality: string | null;
+    disability: boolean | null;
+    /** Solo llega a administradores. */
+    registry: string | null;
+    sort: string | null;
 }
 
 export interface RecordOptions {
     states: Option[];
     ageRanges: Option[];
+    sexes: Option[];
+    statuses: Option[];
+    sorts: Option[];
+    nationalities: Option[];
+    /** Solo llega a administradores. */
+    registry: Option[] | null;
 }
 
-export interface RequestFilters extends RecordFilters {
+export interface RequestFilters {
+    q: string | null;
+    state: string | null;
+    age: string | null;
     type: string | null;
 }
 
-export interface RequestOptions extends RecordOptions {
+export interface RequestOptions {
+    states: Option[];
+    ageRanges: Option[];
     types: Option[];
 }
 

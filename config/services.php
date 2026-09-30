@@ -46,6 +46,21 @@ return [
     |
     */
 
+    /*
+    | Quién ve los datos personales de una ficha (nacimiento y domicilio):
+    |   admins        solo administradores (valor seguro por omisión)
+    |   authenticated cualquier cuenta con sesión iniciada
+    |   all           cualquier persona (solo para desarrollo)
+    */
+    'records_sensitive' => env('RECORDS_SENSITIVE', 'admins'),
+
+    /*
+    | Qué fichas se publican al importar:
+    |   registry  solo las que el registro nacional autoriza (PublicarFicha = SI)
+    |   all       todas; el dato del registro se conserva en `registry_publish`
+    */
+    'records_publish' => env('RECORDS_PUBLISH', 'registry'),
+
     'records_search' => env('RECORDS_SEARCH', 'database'),
 
     // Con «database» en MySQL, busca con el índice de texto completo (más rápido

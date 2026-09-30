@@ -154,17 +154,143 @@ class RnpdnoRecordMapperTest extends TestCase
         ];
     }
 
-    public function test_ignores_addresses_and_birth_data(): void
+    public function test_keeps_the_addresses_and_birth_data_the_registry_provides(): void
     {
         $attributes = $this->map([
             'nombre' => 'MARIA',
-            'calle' => 'CALLE SECRETA',
-            'fechanacimiento' => '01/02/1990',
-            'lugarnacimiento' => 'LUGAR SECRETO',
-            'nombreasentamiento' => 'COLONIA SECRETA',
+            'calle' => 'CALLE UNO',
+            'noexterior' => '12',
+            'nointerior' => 'B',
+            'codigopostal' => '63000',
+            'nombreasentamiento' => 'CENTRO',
+            'fechanacimiento' => '5/8/1990',
+            'estadonacimiento' => 'NAYARIT',
+            'lugarnacimiento' => 'TEPIC',
         ]);
 
-        $this->assertStringNotContainsString('SECRET', json_encode($attributes));
-        $this->assertStringNotContainsString('1990', json_encode($attributes));
+        $this->assertSame('CALLE UNO', $attributes['street']);
+        $this->assertSame('12', $attributes['exterior_number']);
+        $this->assertSame('B', $attributes['interior_number']);
+        $this->assertSame('63000', $attributes['postal_code']);
+        $this->assertSame('CENTRO', $attributes['neighborhood']);
+        $this->assertSame('1990-05-08', $attributes['birth_date']);
+        $this->assertSame('NAYARIT', $attributes['birth_state']);
+        $this->assertSame('TEPIC', $attributes['birth_place']);
+    }
+
+    public function test_maps_the_registry_procedure_and_person_details(): void
+    {
+        $attributes = $this->map([
+            'Inicio' => 'APLICACIÓN WEB - AUTORIDAD',
+            'SoloBusqueda' => 'SI',
+            'archivomigracion' => 'SIN DATO',
+            'Nacionalidad' => 'MEXICANA',
+            'hablaespaniol' => 'SI',
+            'TieneDiscapacidad' => 'NO',
+            'TipoDiscapacidad' => 'SIN DATO',
+            'edadanios' => 17,
+            'edadmeses' => '1',
+            'edaddias' => 3,
+            'iddependenciaorigen' => 57,
+            'PertenenciaPorCanalizacion' => 'FISCALIA GENERAL DE JALISCO|COMISION LOCAL DE BUSQUEDA|FISCALIA GENERAL DE JALISCO',
+        ]);
+
+        $this->assertSame('APLICACIÓN WEB - AUTORIDAD', $attributes['origin']);
+        $this->assertTrue($attributes['search_only']);
+        $this->assertNull($attributes['migration_file']);
+        $this->assertSame('MEXICANA', $attributes['nationality']);
+        $this->assertTrue($attributes['speaks_spanish']);
+        $this->assertFalse($attributes['has_disability']);
+        $this->assertNull($attributes['disability_type']);
+        $this->assertSame([17, 1, 3], [$attributes['registered_age_years'], $attributes['registered_age_months'], $attributes['registered_age_days']]);
+        $this->assertSame(57, $attributes['source_authority_id']);
+        $this->assertSame(['FISCALIA GENERAL DE JALISCO', 'COMISION LOCAL DE BUSQUEDA'], json_decode($attributes['referred_to'], true));
+    }
+
+    #[DataProvider('booleans')]
+    public function test_reads_yes_no_answers(mixed $value, ?bool $expected): void
+    {
+        $this->assertSame($expected, $this->map(['hablaespaniol' => $value])['speaks_spanish']);
+    }
+
+    /**
+     * @return array<string, array{mixed, bool|null}>
+     */
+    public static function booleans(): array
+    {
+        return [
+            'yes' => ['SI', true],
+            'lowercase with spaces' => [' si ', true],
+            'no' => ['NO', false],
+            'asterisk' => ['*', null],
+            'no data' => ['SIN DATO', null],
+            'missing' => [null, null],
+        ];
+    }
+
+    #[DataProvider('flexibleDates')]
+    public function test_reads_dates_in_the_formats_of_the_registry(mixed $value, ?string $expected): void
+    {
+        $this->assertSame($expected, $this->map(['fechacaptura' => $value])['registered_date']);
+    }
+
+    /**
+     * @return array<string, array{mixed, string|null}>
+     */
+    public static function flexibleDates(): array
+    {
+        return [
+            'month first' => ['5/15/2024', '2024-05-15'],
+            'day first when the day is above 12' => ['15/05/2024', '2024-05-15'],
+            'ambiguous uses month first' => ['5/8/1990', '1990-05-08'],
+            'iso' => ['2024-05-15T00:00:00.000Z', '2024-05-15'],
+            'impossible day' => ['2/30/2024', null],
+            'year too old' => ['1/1/1850', null],
+            'garbage' => ['SIN DATO', null],
+            'missing' => [null, null],
+        ];
+    }
+
+    public function test_reads_the_date_of_the_notice_preferring_the_day_first_variant(): void
+    {
+        $this->assertSame('2026-06-15', $this->map(['ffechapercato' => '15/06/2026', 'fechapercato' => '6/15/2026'])['noticed_date']);
+        $this->assertSame('2026-06-15', $this->map(['fechapercato' => '6/15/2026'])['noticed_date']);
+    }
+
+    public function test_reads_the_last_update_of_the_registry_with_its_time(): void
+    {
+        $this->assertSame('2026-09-28 19:15:21', $this->map(['fechaAct' => '28/9/2026, 19:15:21'])['source_updated_at']);
+        $this->assertNull($this->map(['fechaAct' => 'ayer'])['source_updated_at']);
+    }
+
+    public function test_discards_impossible_registered_ages(): void
+    {
+        $attributes = $this->map(['edadanios' => 500, 'edadmeses' => 13, 'edaddias' => 40]);
+
+        $this->assertNull($attributes['registered_age_years']);
+        $this->assertNull($attributes['registered_age_months']);
+        $this->assertNull($attributes['registered_age_days']);
+    }
+
+    #[DataProvider('registryPublishValues')]
+    public function test_keeps_what_the_registry_says_about_publishing(mixed $value, ?string $expected): void
+    {
+        $this->assertSame($expected, $this->map(['PublicarFicha' => $value])['registry_publish']);
+    }
+
+    /**
+     * @return array<string, array{mixed, string|null}>
+     */
+    public static function registryPublishValues(): array
+    {
+        return [
+            'yes' => ['SI', 'SI'],
+            'yes lowercase with spaces' => [' si ', 'SI'],
+            'no' => ['NO', 'NO'],
+            'no data' => ['SIN DATO', 'SIN DATO'],
+            'something else' => ['*', 'SIN DATO'],
+            'empty' => ['', null],
+            'missing' => [null, null],
+        ];
     }
 }

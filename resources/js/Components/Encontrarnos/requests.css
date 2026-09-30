@@ -962,3 +962,83 @@
         border-right: 0;
     }
 }
+
+/* Datos etiquetados de la ficha */
+.req-datasheet {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    margin: 0;
+    border: 1px solid #172e2b;
+    background: #fbf8ef;
+}
+.req-datasheet > div {
+    padding: 14px 18px;
+    border-right: 1px solid rgba(23, 46, 43, 0.2);
+    border-bottom: 1px solid rgba(23, 46, 43, 0.2);
+}
+.req-datasheet dt {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4c7e5f;
+}
+.req-datasheet dd {
+    margin: 4px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #172e2b;
+    overflow-wrap: anywhere;
+}
+.req-datasheet .is-empty dd {
+    font-weight: 500;
+    color: #8a968f;
+}
+.req-block--sensitive h2 {
+    color: #a3311d;
+}
+.req-badge {
+    margin-left: 6px;
+    padding: 2px 8px;
+    background: #fbeae6;
+    color: #a3311d;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+.req-restricted {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 34px;
+    padding: 16px 18px;
+    border: 1px dashed #b55049;
+    background: #fbeae6;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #7a2a1b;
+}
+.req-restricted svg {
+    flex: none;
+}
+.req-referrals {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.req-referrals li {
+    padding: 10px 14px;
+    border-left: 3px solid #1c5d6b;
+    background: #fbf8ef;
+    font-size: 15px;
+    color: #22352f;
+}
+
+.req-subtle {
+    margin: 14px 0 0 !important;
+    font-size: 13px !important;
+    font-weight: 700;
+    color: #4a5e58 !important;
+}

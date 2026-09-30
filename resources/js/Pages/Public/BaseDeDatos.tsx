@@ -1,4 +1,4 @@
-import { RecordBrowser } from '@/Components/Encontrarnos/PublicTools';
+import { RecordBrowser } from '@/Components/Encontrarnos/RecordCatalog';
 import '@/Components/Encontrarnos/requests.css';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { Paginated, PersonRecord, RecordFilters, RecordOptions } from '@/types';
