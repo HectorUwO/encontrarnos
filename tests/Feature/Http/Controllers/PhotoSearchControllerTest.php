@@ -49,6 +49,7 @@ class PhotoSearchControllerTest extends TestCase
     public function test_returns_the_records_found_by_the_matching_engine(): void
     {
         $record = PersonRecord::factory()->create(['folio' => 'EN-000007']);
+        $record->setAttribute('face_similarity', 0.95);
 
         $this->app->instance(PhotoMatcher::class, new class($record) implements PhotoMatcher
         {

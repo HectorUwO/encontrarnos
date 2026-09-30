@@ -1,41 +1,108 @@
 import { Reveal } from '@/Components/Encontrarnos/motion';
 import PublicLayout from '@/Layouts/PublicLayout';
-import { PersonRecord } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowUpRight,
     Check,
+    ChevronDown,
     ImagePlus,
     LoaderCircle,
     Search,
     UploadCloud,
 } from 'lucide-react';
-import {
-    CSSProperties,
-    ChangeEvent,
-    DragEvent,
-    ReactNode,
-    useRef,
-    useState,
-} from 'react';
+import { ChangeEvent, DragEvent, ReactNode, useRef, useState } from 'react';
 
 type Preview = { name: string; url: string };
 
+type PhotoMatch = {
+    folio?: string;
+    reference?: string;
+    name: string;
+    portrait: string;
+    url: string;
+    source: 'record' | 'request';
+    similarity: number | null;
+    municipality?: string;
+    state_label?: string;
+};
+
 interface PhotoSearchResult {
     available: boolean;
-    matches: PersonRecord[];
+    matches: PhotoMatch[];
+    other_matches: PhotoMatch[];
 }
 
-function PhotoSearchOutcome({ search }: { search: PhotoSearchResult }) {
+function MatchCards({
+    matches,
+    offset = 0,
+}: {
+    matches: PhotoMatch[];
+    offset?: number;
+}) {
+    return (
+        <ol className="en-face-grid" start={offset + 1}>
+            {matches.map((person, index) => (
+                <li key={person.url} className="en-face-card">
+                    <Link href={person.url} className="en-face-card-link">
+                        <div className="en-face-portrait">
+                            <img
+                                src={person.portrait}
+                                alt={`Fotografía de ${person.name}`}
+                                loading="lazy"
+                            />
+                            <span className="en-face-rank">
+                                {String(offset + index + 1).padStart(2, '0')}
+                            </span>
+                            <span className="en-face-score">
+                                {((person.similarity ?? 0) * 100).toFixed(1)} %
+                                <small>SIMILITUD FACIAL</small>
+                            </span>
+                        </div>
+                        <div className="en-face-card-body">
+                            <span className="en-face-source">
+                                {person.source === 'record'
+                                    ? 'Desaparecidos'
+                                    : 'Solicitud de información'}
+                            </span>
+                            <h3>{person.name}</h3>
+                            <p>
+                                {[person.municipality, person.state_label]
+                                    .filter(Boolean)
+                                    .join(', ') || 'Ubicación no disponible'}
+                            </p>
+                            <div className="en-face-card-footer">
+                                <span>{person.folio || person.reference}</span>
+                                <span>
+                                    Ver ficha{' '}
+                                    <ArrowUpRight
+                                        size={16}
+                                        aria-hidden="true"
+                                    />
+                                </span>
+                            </div>
+                        </div>
+                    </Link>
+                </li>
+            ))}
+        </ol>
+    );
+}
+
+function PhotoSearchOutcome({
+    search,
+    preview,
+}: {
+    search: PhotoSearchResult;
+    preview: Preview | null;
+}) {
     if (!search.available) {
         return (
             <div className="en-photo-outcome" role="status">
-                <strong>Esta búsqueda todavía no está disponible.</strong>
+                <strong>El servicio de comparación no está disponible.</strong>
                 <p>
-                    Comparar rostros implica tratar datos biométricos, así que
-                    antes de activarla se está definiendo cómo hacerlo con
-                    cuidado. Mientras tanto puedes buscar por nombre, lugar o
-                    descripción.
+                    No pudimos realizar la comparación en este momento. Intenta
+                    de nuevo más tarde. También puedes buscar por nombre, lugar
+                    o descripción.
                 </p>
                 <Link href={route('records')} className="en-secondary-button">
                     Buscar en la base de datos <ArrowUpRight size={20} />
@@ -44,10 +111,13 @@ function PhotoSearchOutcome({ search }: { search: PhotoSearchResult }) {
         );
     }
 
-    if (search.matches.length === 0) {
+    const otherMatches = search.other_matches ?? [];
+    if (search.matches.length === 0 && otherMatches.length === 0) {
         return (
             <div className="en-photo-outcome" role="status">
-                <strong>No encontramos coincidencias.</strong>
+                <strong>
+                    No encontramos coincidencias con al menos 30 % de similitud.
+                </strong>
                 <p>
                     Prueba con otra fotografía o busca por nombre, lugar o
                     descripción en la base de datos.
@@ -57,32 +127,76 @@ function PhotoSearchOutcome({ search }: { search: PhotoSearchResult }) {
     }
 
     return (
-        <div className="en-photo-outcome" role="status">
-            <strong>Posibles coincidencias</strong>
-            <p>
-                Son solo una guía: compara los datos de cada ficha antes de dar
+        <div className="en-face-results">
+            <header className="en-face-results-header">
+                <div>
+                    <p className="en-section-kicker">
+                        RESULTADO DE LA COMPARACIÓN
+                    </p>
+                    <h2 id="photo-results-title">
+                        POSIBLES <em>COINCIDENCIAS.</em>
+                    </h2>
+                    <p role="status">
+                        {search.matches.length} resultados por encima del 80 % ·{' '}
+                        {otherMatches.length} adicionales disponibles.
+                    </p>
+                </div>
+                {preview && (
+                    <div className="en-face-query">
+                        <img
+                            src={preview.url}
+                            alt="Fotografía usada en esta comparación"
+                        />
+                        <span>
+                            Tu fotografía<small>Solo para esta consulta</small>
+                        </span>
+                    </div>
+                )}
+            </header>
+            <p className="en-face-notice">
+                El porcentaje expresa similitud facial, no certeza de identidad.
+                Compara las fotografías y los datos de cada ficha antes de dar
                 seguimiento.
             </p>
-            <ul className="en-photo-matches">
-                {search.matches.map((record, index) => (
-                    <li
-                        key={record.folio}
-                        style={{ '--i': index } as CSSProperties}
-                    >
-                        <Link href={route('records', { q: record.folio })}>
-                            <img src={record.portrait} alt="" />
-                            <span>
-                                {record.name}
-                                <small>
-                                    {[record.municipality, record.state_label]
-                                        .filter(Boolean)
-                                        .join(', ') || record.folio}
-                                </small>
-                            </span>
-                        </Link>
-                    </li>
-                ))}
-            </ul>
+            {search.matches.length > 0 ? (
+                <>
+                    <div className="en-face-group-heading">
+                        <h3>Las más parecidas</h3>
+                        <span>Hasta 10 · Similitud superior al 80 %</span>
+                    </div>
+                    <MatchCards matches={search.matches} />
+                </>
+            ) : (
+                <p className="en-face-empty">
+                    No hay resultados por encima del 80 %. Puedes revisar las
+                    otras posibles coincidencias a continuación.
+                </p>
+            )}
+            {otherMatches.length > 0 && (
+                <details className="en-face-more">
+                    <summary>
+                        <span>
+                            Otras posibles coincidencias{' '}
+                            <small>
+                                {otherMatches.length} resultados · Desde 30 % de
+                                similitud
+                            </small>
+                        </span>
+                        <ChevronDown size={24} aria-hidden="true" />
+                    </summary>
+                    <div className="en-face-more-content">
+                        <p>
+                            Ordenadas de mayor a menor similitud, sin repetir
+                            las fichas anteriores. Se muestran hasta 100
+                            resultados en total.
+                        </p>
+                        <MatchCards
+                            matches={otherMatches}
+                            offset={search.matches.length}
+                        />
+                    </div>
+                </details>
+            )}
         </div>
     );
 }
@@ -100,9 +214,10 @@ export default function BusquedaFotografia({
     const [preview, setPreview] = useState<Preview | null>(null);
     const [uploadError, setUploadError] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+    const [showResults, setShowResults] = useState(Boolean(search));
 
     const readFile = (selected?: File) => {
-        if (!selected) return;
+        if (!selected || searching) return;
         if (
             !['image/jpeg', 'image/png', 'image/webp'].includes(selected.type)
         ) {
@@ -114,6 +229,7 @@ export default function BusquedaFotografia({
             return;
         }
         setUploadError('');
+        setShowResults(false);
         setFile(selected);
         const reader = new FileReader();
         reader.onload = () =>
@@ -121,7 +237,7 @@ export default function BusquedaFotografia({
         reader.readAsDataURL(selected);
     };
     const submit = () => {
-        if (!file) return;
+        if (!file || searching) return;
         router.post(
             route('photo-search.store'),
             { photo: file },
@@ -129,7 +245,11 @@ export default function BusquedaFotografia({
                 forceFormData: true,
                 preserveState: true,
                 preserveScroll: true,
-                onStart: () => setSearching(true),
+                onStart: () => {
+                    setSearching(true);
+                    setShowResults(false);
+                },
+                onSuccess: () => setShowResults(true),
                 onFinish: () => setSearching(false),
             },
         );
@@ -161,8 +281,8 @@ export default function BusquedaFotografia({
                     </h2>
                     <p>
                         Una imagen puede ayudar a encontrar información. Cárgala
-                        para preparar una búsqueda entre los registros
-                        disponibles.
+                        para buscar entre fichas de desaparecidos y solicitudes
+                        de información publicadas.
                     </p>
                     <Reveal as="ol" stagger className="en-photo-steps">
                         <li>
@@ -242,6 +362,7 @@ export default function BusquedaFotografia({
                             ref={fileInputRef}
                             type="file"
                             accept="image/jpeg,image/png,image/webp"
+                            disabled={searching}
                             onChange={handleFileChange}
                             className="en-file-input"
                             aria-label="Seleccionar fotografía"
@@ -260,6 +381,7 @@ export default function BusquedaFotografia({
                         }
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
+                        disabled={searching}
                     >
                         {preview
                             ? 'Cambiar fotografía'
@@ -292,9 +414,16 @@ export default function BusquedaFotografia({
                         La fotografía solo se usa para esta consulta: no se
                         guarda ni se publica.
                     </p>
-                    {search && <PhotoSearchOutcome search={search} />}
                 </div>
             </section>
+            {showResults && search && !searching && (
+                <section
+                    className="en-photo-results-section"
+                    aria-label="Resultados de comparación facial"
+                >
+                    <PhotoSearchOutcome search={search} preview={preview} />
+                </section>
+            )}
         </>
     );
 }

@@ -68,6 +68,19 @@ return [
     // parte del texto.
     'records_fulltext' => (bool) env('RECORDS_FULLTEXT', true),
 
+    'compreface' => [
+        'enabled' => (bool) env('COMPREFACE_ENABLED', false),
+        'auto_index' => (bool) env('COMPREFACE_AUTO_INDEX', false),
+        'host' => env('COMPREFACE_HOST', 'http://127.0.0.1:8001'),
+        'key' => env('COMPREFACE_API_KEY'),
+        'threshold' => (float) env('COMPREFACE_THRESHOLD', 0.30),
+        'timeout' => (int) env('COMPREFACE_TIMEOUT', 20),
+        'prediction_count' => 100,
+        'limit' => 100,
+        'primary_threshold' => 0.80,
+        'primary_limit' => 10,
+    ],
+
     'meilisearch' => [
         'host' => env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
         'key' => env('MEILISEARCH_KEY'),

@@ -2,10 +2,17 @@
 
 namespace App\Providers;
 
+use App\Jobs\SyncPersonFace;
+use App\Models\PersonRecord;
+use App\Models\PersonRequest;
 use App\Models\User;
+use App\Services\PhotoSearch\CompreFaceMatcher;
+use App\Services\PhotoSearch\FaceIndexer;
 use App\Services\PhotoSearch\NullPhotoMatcher;
 use App\Services\PhotoSearch\PhotoMatcher;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -18,7 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(PhotoMatcher::class, NullPhotoMatcher::class);
+        $this->app->bind(PhotoMatcher::class, fn (Application $app): PhotoMatcher => $app->make(
+            config('services.compreface.enabled') ? CompreFaceMatcher::class : NullPhotoMatcher::class,
+        ));
     }
 
     /**
@@ -26,6 +35,37 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('services.compreface.enabled') && config('services.compreface.auto_index')) {
+            DevCommands::artisan('queue:work --queue=faces --sleep=1 --tries=4 --timeout=75', 'faces');
+            DevCommands::artisan('schedule:work', 'scheduler');
+        }
+
+        foreach ([PersonRecord::class, PersonRequest::class] as $model) {
+            $model::saved(function (PersonRecord|PersonRequest $person): void {
+                if (! config('services.compreface.enabled') || (! $person->wasRecentlyCreated && ! $person->wasChanged(['photo_path', 'published_at', 'status', 'closed_at']))) {
+                    return;
+                }
+                $previousPath = $person->getRawOriginal('photo_path');
+                if (! $person->hasPhoto() && ! $previousPath) {
+                    return;
+                }
+                SyncPersonFace::dispatch(
+                    $person instanceof PersonRecord ? 'record' : 'request',
+                    $person->id,
+                    $previousPath ? FaceIndexer::subject($person, $previousPath) : null,
+                )->afterCommit();
+            });
+            $model::deleted(function (PersonRecord|PersonRequest $person): void {
+                if (config('services.compreface.enabled') && $person->hasPhoto()) {
+                    SyncPersonFace::dispatch(
+                        $person instanceof PersonRecord ? 'record' : 'request',
+                        $person->id,
+                        FaceIndexer::subject($person),
+                    )->afterCommit();
+                }
+            });
+        }
+
         // Único punto donde se decide quién ve los datos personales (nacimiento
         // y domicilio) de una ficha. Cuando haya roles más finos, se cambia aquí.
         // Lo que el registro dijo sobre publicar una ficha (SI, NO, SIN DATO) es

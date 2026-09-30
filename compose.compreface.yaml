@@ -1,0 +1,79 @@
+name: encontrarnos-compreface
+
+x-database: &database
+  POSTGRES_USER: compreface
+  POSTGRES_PASSWORD: ${COMPREFACE_POSTGRES_PASSWORD:?Define COMPREFACE_POSTGRES_PASSWORD en .env}
+  POSTGRES_URL: jdbc:postgresql://compreface-postgres-db:5432/compreface
+
+services:
+  compreface-postgres-db:
+    image: exadel/compreface-postgres-db:1.2.0
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: compreface
+      POSTGRES_PASSWORD: ${COMPREFACE_POSTGRES_PASSWORD}
+      POSTGRES_DB: compreface
+    volumes:
+      - compreface-data:/var/lib/postgresql/data
+
+  compreface-admin:
+    image: exadel/compreface-admin:1.2.0
+    restart: unless-stopped
+    depends_on:
+      - compreface-postgres-db
+      - compreface-api
+    environment:
+      <<: *database
+      SPRING_PROFILES_ACTIVE: dev
+      ENABLE_EMAIL_SERVER: 'false'
+      ADMIN_JAVA_OPTS: -Xmx512m
+      MAX_FILE_SIZE: 10MB
+      MAX_REQUEST_SIZE: 12MB
+
+  compreface-api:
+    image: exadel/compreface-api:1.2.0
+    restart: unless-stopped
+    depends_on:
+      - compreface-postgres-db
+      - compreface-core
+    environment:
+      <<: *database
+      SPRING_PROFILES_ACTIVE: dev
+      API_JAVA_OPTS: -Xmx768m
+      SAVE_IMAGES_TO_DB: 'false'
+      MAX_FILE_SIZE: 10MB
+      MAX_REQUEST_SIZE: 12MB
+      CONNECTION_TIMEOUT: '3000'
+      READ_TIMEOUT: '20000'
+
+  compreface-fe:
+    image: exadel/compreface-fe:1.2.0
+    restart: unless-stopped
+    depends_on:
+      - compreface-api
+      - compreface-admin
+    ports:
+      - '127.0.0.1:8001:80'
+    environment:
+      CLIENT_MAX_BODY_SIZE: 12M
+      PROXY_READ_TIMEOUT: 20000ms
+      PROXY_CONNECT_TIMEOUT: 3000ms
+
+  compreface-core:
+    image: exadel/compreface-core:1.2.0-mobilenet-gpu
+    restart: unless-stopped
+    environment:
+      ML_PORT: '3000'
+      IMG_LENGTH_LIMIT: '640'
+      UWSGI_PROCESSES: '1'
+      UWSGI_THREADS: '1'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  compreface-data:

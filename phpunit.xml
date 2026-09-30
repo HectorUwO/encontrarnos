@@ -33,6 +33,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="RECORDS_SEARCH" value="database"/>
         <env name="RECORDS_FULLTEXT" value="false"/>
+        <env name="COMPREFACE_ENABLED" value="false" force="true"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
