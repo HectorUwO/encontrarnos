@@ -1,14 +1,73 @@
+import { FadeImage, Reveal } from '@/Components/Encontrarnos/motion';
 import { RequestComposer } from '@/Components/Encontrarnos/PublicTools';
 import PublicLayout from '@/Layouts/PublicLayout';
+import { PersonRequestItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowUpRight, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowUpRight, Plus, UserRound } from 'lucide-react';
+import { ReactNode, useState } from 'react';
 
-export default function Solicitudes() {
+function RequestCard({
+    request,
+    index,
+}: {
+    request: PersonRequestItem;
+    index: number;
+}) {
+    return (
+        <Reveal as="article" index={index} className="en-request-card">
+            <div className="en-notice-top">
+                <span>{request.reference}</span>
+                <span>
+                    {request.type === 'identification'
+                        ? 'IDENTIFICACIÓN'
+                        : 'BÚSQUEDA'}
+                </span>
+            </div>
+            <div className="en-request-card-body">
+                {request.photo_thumb ? (
+                    <div className="en-request-card-photo is-photo">
+                        <FadeImage
+                            src={request.photo_thumb}
+                            alt={`Fotografía de la solicitud ${request.reference}`}
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    </div>
+                ) : (
+                    <div
+                        className="en-request-card-photo"
+                        role="img"
+                        aria-label="Sin fotografía"
+                    >
+                        <UserRound size={44} strokeWidth={1.5} />
+                    </div>
+                )}
+                <div>
+                    <h3>{request.name ?? 'Persona sin nombre'}</h3>
+                    <p className="en-request-card-meta">
+                        {[request.place, request.created_at_label]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </p>
+                    <p className="en-request-card-text">
+                        {request.description}
+                    </p>
+                </div>
+            </div>
+        </Reveal>
+    );
+}
+
+export default function Solicitudes({
+    requests,
+}: {
+    requests: { data: PersonRequestItem[] };
+}) {
     const [requestOpen, setRequestOpen] = useState(false);
+    const published = requests.data;
 
     return (
-        <PublicLayout>
+        <>
             <Head title="Solicitudes · Encontrarnos" />
             <section
                 className="en-requests en-section"
@@ -41,10 +100,25 @@ export default function Solicitudes() {
                         </button>
                     </div>
                 </div>
-                <div className="en-request-showcase" id="lista-solicitudes">
+                {published.length > 0 && (
+                    <div
+                        className="en-request-board"
+                        id="lista-solicitudes"
+                        aria-label="Solicitudes publicadas"
+                    >
+                        {published.map((request, index) => (
+                            <RequestCard
+                                key={request.id}
+                                request={request}
+                                index={index}
+                            />
+                        ))}
+                    </div>
+                )}
+                <div className="en-request-showcase">
                     <div className="en-request-art">
                         <div className="en-notice-top">
-                            <span>SOLICITUD / 001</span>
+                            <span>TABLÓN / AVISO</span>
                             <Plus size={22} />
                         </div>
                         <h3>
@@ -56,7 +130,7 @@ export default function Solicitudes() {
                             <div className="en-request-art-orbit" />
                             <div className="en-request-avatar">
                                 <img
-                                    src="/men%20place%20holder.png"
+                                    src="/placeholder-man.webp"
                                     alt="Silueta de una persona"
                                 />
                             </div>
@@ -90,6 +164,12 @@ export default function Solicitudes() {
                                 </dd>
                             </div>
                         </dl>
+                        {published.length === 0 && (
+                            <p className="en-request-bottom">
+                                Todavía no hay solicitudes publicadas. Las que
+                                se envían se revisan antes de aparecer aquí.
+                            </p>
+                        )}
                         <Link
                             href="/base-de-datos"
                             className="en-secondary-button"
@@ -103,6 +183,8 @@ export default function Solicitudes() {
                 open={requestOpen}
                 onClose={() => setRequestOpen(false)}
             />
-        </PublicLayout>
+        </>
     );
 }
+
+Solicitudes.layout = (page: ReactNode) => <PublicLayout>{page}</PublicLayout>;

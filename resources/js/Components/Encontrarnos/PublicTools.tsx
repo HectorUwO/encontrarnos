@@ -1,16 +1,28 @@
-import { Link, usePage } from '@inertiajs/react';
+import { classNames } from '@/classNames';
+import {
+    Option,
+    Paginated,
+    PersonRecord,
+    RecordFilters,
+    RecordOptions,
+} from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowUpRight,
     ChartNoAxesColumnIncreasing,
     Check,
+    ChevronLeft,
+    ChevronRight,
     FilePlus2,
     ImagePlus,
+    LoaderCircle,
     Search,
     SlidersHorizontal,
     UsersRound,
     X,
 } from 'lucide-react';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { CSSProperties, FormEvent, useEffect, useRef, useState } from 'react';
+import { FadeImage, Reveal, useVisitPending } from './motion';
 import './public-tools.css';
 
 const actions = [
@@ -25,7 +37,7 @@ const actions = [
         href: '/estadisticas',
         title: 'Estadísticas',
         short: 'Estadísticas',
-        description: 'Explora la información por lugar y edad.',
+        description: 'Mapa, histórico y perfil por entidad.',
         icon: ChartNoAxesColumnIncreasing,
     },
     {
@@ -46,12 +58,21 @@ const actions = [
 
 export function ActionGrid() {
     return (
-        <div className="en-action-grid" aria-label="Acciones principales">
+        <Reveal
+            stagger
+            className="en-action-grid"
+            aria-label="Acciones principales"
+        >
             {actions.map(({ href, title, description, icon: Icon }, index) => (
                 <Link
                     key={href}
                     href={href}
-                    className={`en-action-card ${index === 0 ? 'en-action-primary' : ''}`}
+                    prefetch
+                    style={{ '--i': index } as CSSProperties}
+                    className={classNames(
+                        'en-action-card',
+                        index === 0 && 'en-action-primary',
+                    )}
                 >
                     <Icon size={23} aria-hidden="true" />
                     <span>
@@ -61,7 +82,7 @@ export function ActionGrid() {
                     <ArrowUpRight size={19} aria-hidden="true" />
                 </Link>
             ))}
-        </div>
+        </Reveal>
     );
 }
 
@@ -85,49 +106,7 @@ export function MobileNavigation() {
 
 export { actions };
 
-const exampleRecords = [
-    {
-        id: 'EN-001',
-        name: 'Ficha EN-001',
-        age: 29,
-        state: 'Ciudad de México',
-        date: '12 de enero de 2026',
-        type: 'Persona desaparecida',
-        description:
-            'Cabello oscuro, estatura media. La ficha reúne descripción física, señas particulares y datos de la desaparición.',
-        portrait: '/woman-placeholder.png',
-    },
-    {
-        id: 'EN-002',
-        name: 'Ficha EN-002',
-        age: 42,
-        state: 'Jalisco',
-        date: '8 de febrero de 2026',
-        type: 'Solicitud de identificación',
-        description:
-            'Cabello corto, complexión media. La ficha incluye una descripción y un canal para aportar información.',
-        portrait: '/men%20place%20holder.png',
-    },
-    {
-        id: 'EN-003',
-        name: 'Ficha EN-003',
-        age: 34,
-        state: 'Nuevo León',
-        date: '20 de marzo de 2026',
-        type: 'Persona desaparecida',
-        description:
-            'Cabello oscuro, complexión delgada. La ficha organiza la información disponible para facilitar su consulta.',
-        portrait: '/men%20place%20holder.png',
-    },
-];
-const states = [...new Set(exampleRecords.map((record) => record.state))];
-type ExampleRecord = (typeof exampleRecords)[number];
-const normalize = (value: string) =>
-    value
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLocaleLowerCase('es-MX')
-        .trim();
+const SEARCH_DELAY = 350;
 
 function useDialog(open: boolean, onClose: () => void) {
     const ref = useRef<HTMLDialogElement>(null);
@@ -151,35 +130,111 @@ function useDialog(open: boolean, onClose: () => void) {
     };
 }
 
-export function RecordBrowser() {
-    const [query, setQuery] = useState('');
-    const [state, setState] = useState('');
-    const [type, setType] = useState('');
-    const [age, setAge] = useState('');
-    const [filtersOpen, setFiltersOpen] = useState(false);
-    const [selected, setSelected] = useState<ExampleRecord | null>(null);
-    const dialog = useDialog(Boolean(selected), () => setSelected(null));
-    const activeFilters = [state, type, age].filter(Boolean).length;
-    const records = exampleRecords.filter(
-        (record) =>
-            normalize(
-                `${record.name} ${record.id} ${record.state} ${record.description}`,
-            ).includes(normalize(query)) &&
-            (!state || record.state === state) &&
-            (!type || record.type === type) &&
-            (!age ||
-                (age === '18-29'
-                    ? record.age < 30
-                    : age === '30-39'
-                      ? record.age >= 30 && record.age < 40
-                      : record.age >= 40)),
+const ageLabel = (age: number | null) =>
+    age === null ? 'Sin dato' : `${age} años`;
+
+const placeLabel = (record: PersonRecord) =>
+    [record.municipality, record.state_label].filter(Boolean).join(', ') ||
+    'Sin dato';
+
+const dateTitle = (record: PersonRecord, long = false) =>
+    record.type === 'missing_person'
+        ? long
+            ? 'Fecha de desaparición'
+            : 'Desaparición'
+        : long
+          ? 'Fecha de registro'
+          : 'Registro';
+
+function Portrait({
+    record,
+    large = false,
+}: {
+    record: PersonRecord;
+    large?: boolean;
+}) {
+    return (
+        <FadeImage
+            src={large ? record.portrait_large : record.portrait}
+            alt={
+                record.has_photo
+                    ? `Fotografía de la ficha ${record.folio}`
+                    : 'Silueta de una persona'
+            }
+            className={record.has_photo ? 'en-photo' : undefined}
+            loading="lazy"
+            decoding="async"
+        />
     );
+}
+
+export function RecordBrowser({
+    records,
+    filters,
+    options,
+}: {
+    records: Paginated<PersonRecord>;
+    filters: RecordFilters;
+    options: RecordOptions;
+}) {
+    const [query, setQuery] = useState(filters.q ?? '');
+    const [filtersOpen, setFiltersOpen] = useState(
+        Boolean(filters.state || filters.age || filters.type),
+    );
+    // La ficha se conserva mientras el diálogo se cierra: si no, se vaciaría a media animación.
+    const [selected, setSelected] = useState<PersonRecord | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const dialog = useDialog(dialogOpen, () => setDialogOpen(false));
+    const pending = useVisitPending();
+    const openRecord = (record: PersonRecord) => {
+        setSelected(record);
+        setDialogOpen(true);
+    };
+    const activeFilters = [filters.state, filters.age, filters.type].filter(
+        Boolean,
+    ).length;
+    const latestFilters = useRef(filters);
+    latestFilters.current = filters;
+
+    const visit = (changes: Partial<RecordFilters>, page = 1) => {
+        const next = { ...latestFilters.current, ...changes };
+        const parameters = Object.fromEntries(
+            Object.entries({ ...next, page: page > 1 ? page : null }).filter(
+                ([, value]) => value,
+            ),
+        );
+        router.get(route('records'), parameters, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['records', 'filters'],
+            onSuccess: () => {
+                if (page > 1) {
+                    document
+                        .getElementById('registros')
+                        ?.scrollIntoView({ behavior: 'smooth' });
+                }
+            },
+        });
+    };
+
+    useEffect(() => {
+        const term = query.trim();
+        if (term === (latestFilters.current.q ?? '')) return;
+        const timer = setTimeout(
+            () => visit({ q: term || null }),
+            SEARCH_DELAY,
+        );
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [query]);
+
     const reset = () => {
         setQuery('');
-        setState('');
-        setType('');
-        setAge('');
+        visit({ q: null, state: null, age: null, type: null });
     };
+    const { current_page: currentPage, last_page: lastPage } = records.meta;
+
     return (
         <div className="en-database">
             <div className="en-database-toolbar">
@@ -213,105 +268,134 @@ export function RecordBrowser() {
                 </button>
             </div>
             <div
-                className="en-database-filters"
+                className={classNames('en-collapse', filtersOpen && 'is-open')}
                 id="database-filters"
-                hidden={!filtersOpen}
             >
-                <label>
-                    Estado
-                    <select
-                        value={state}
-                        onChange={(event) => setState(event.target.value)}
-                    >
-                        <option value="">Todos los estados</option>
-                        {states.map((item) => (
-                            <option key={item}>{item}</option>
-                        ))}
-                    </select>
-                </label>
-                <label>
-                    Edad
-                    <select
-                        value={age}
-                        onChange={(event) => setAge(event.target.value)}
-                    >
-                        <option value="">Todas las edades</option>
-                        <option value="18-29">18 a 29 años</option>
-                        <option value="30-39">30 a 39 años</option>
-                        <option value="40+">40 años o más</option>
-                    </select>
-                </label>
-                <label>
-                    Tipo de registro
-                    <select
-                        value={type}
-                        onChange={(event) => setType(event.target.value)}
-                    >
-                        <option value="">Todos los registros</option>
-                        <option>Persona desaparecida</option>
-                        <option>Solicitud de identificación</option>
-                    </select>
-                </label>
-                <button
-                    type="button"
-                    className="en-plain-button"
-                    onClick={reset}
-                >
-                    Limpiar filtros
-                </button>
+                <div className="en-collapse-inner">
+                    <div className="en-database-filters">
+                        <label>
+                            Estado
+                            <select
+                                value={filters.state ?? ''}
+                                onChange={(event) =>
+                                    visit({ state: event.target.value || null })
+                                }
+                            >
+                                <option value="">Todos los estados</option>
+                                {options.states.map((item) => (
+                                    <option key={item.value} value={item.value}>
+                                        {item.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            Edad
+                            <select
+                                value={filters.age ?? ''}
+                                onChange={(event) =>
+                                    visit({ age: event.target.value || null })
+                                }
+                            >
+                                <option value="">Todas las edades</option>
+                                {options.ageRanges.map((item) => (
+                                    <option key={item.value} value={item.value}>
+                                        {item.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            Tipo de registro
+                            <select
+                                value={filters.type ?? ''}
+                                onChange={(event) =>
+                                    visit({ type: event.target.value || null })
+                                }
+                            >
+                                <option value="">Todos los registros</option>
+                                {options.types.map((item) => (
+                                    <option key={item.value} value={item.value}>
+                                        {item.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <button
+                            type="button"
+                            className="en-plain-button"
+                            onClick={reset}
+                        >
+                            Limpiar filtros
+                        </button>
+                    </div>
+                </div>
             </div>
             <div className="en-database-summary">
                 <span role="status" aria-live="polite">
-                    {records.length}{' '}
-                    {records.length === 1 ? 'resultado' : 'resultados'}
+                    {records.meta.total.toLocaleString('es-MX')}{' '}
+                    {records.meta.total === 1 ? 'resultado' : 'resultados'}
                     {activeFilters > 0 &&
                         ` · ${activeFilters} ${activeFilters === 1 ? 'filtro activo' : 'filtros activos'}`}
                 </span>
+                {pending && (
+                    <span aria-hidden="true">
+                        <LoaderCircle className="en-spin" size={15} /> Buscando…
+                    </span>
+                )}
             </div>
-            <div className="en-database-list">
-                {records.map((record) => (
-                    <article className="en-person-card" key={record.id}>
+            <div
+                className={classNames(
+                    'en-database-list',
+                    pending && 'en-pending',
+                )}
+                aria-busy={pending}
+            >
+                {records.data.map((record, index) => (
+                    <article
+                        className="en-person-card"
+                        style={{ '--i': index } as CSSProperties}
+                        key={record.folio}
+                    >
                         <div className="en-person-portrait">
-                            <img
-                                src={record.portrait}
-                                alt="Silueta de una persona"
-                            />
+                            <Portrait record={record} />
                         </div>
                         <div className="en-person-info">
                             <span className="en-person-type">
-                                {record.type}
+                                {record.type_label}
                             </span>
                             <h3>{record.name}</h3>
                             <dl>
                                 <div>
                                     <dt>Edad</dt>
-                                    <dd>{record.age} años</dd>
+                                    <dd>{ageLabel(record.age)}</dd>
                                 </div>
                                 <div>
-                                    <dt>Estado</dt>
-                                    <dd>{record.state}</dd>
+                                    <dt>Lugar</dt>
+                                    <dd>{placeLabel(record)}</dd>
                                 </div>
                                 <div>
-                                    <dt>
-                                        {record.type === 'Persona desaparecida'
-                                            ? 'Desaparición'
-                                            : 'Registro'}
-                                    </dt>
-                                    <dd>{record.date}</dd>
+                                    <dt>{dateTitle(record)}</dt>
+                                    <dd>
+                                        {record.event_date_label ?? 'Sin fecha'}
+                                    </dd>
                                 </div>
                             </dl>
-                            <p>{record.description}</p>
+                            <p>
+                                {record.description ??
+                                    'Aún no hay una descripción física registrada.'}
+                            </p>
                         </div>
                         <button
                             type="button"
                             className="en-person-open"
-                            onClick={() => setSelected(record)}
+                            onClick={() => openRecord(record)}
                         >
                             Ver ficha <ArrowUpRight size={19} />
                         </button>
                     </article>
                 ))}
-                {!records.length && (
+                {!records.data.length && (
                     <div className="en-database-empty">
                         <Search size={30} />
                         <h3>No hay resultados con estos filtros</h3>
@@ -322,12 +406,40 @@ export function RecordBrowser() {
                     </div>
                 )}
             </div>
+            {lastPage > 1 && (
+                <nav
+                    className="en-pagination"
+                    aria-label="Paginación de resultados"
+                >
+                    <button
+                        type="button"
+                        className="en-secondary-button"
+                        disabled={currentPage <= 1}
+                        onClick={() => visit({}, currentPage - 1)}
+                    >
+                        <ChevronLeft size={19} /> Anterior
+                    </button>
+                    <span>
+                        Página {currentPage.toLocaleString('es-MX')} de{' '}
+                        {lastPage.toLocaleString('es-MX')}
+                    </span>
+                    <button
+                        type="button"
+                        className="en-secondary-button"
+                        disabled={currentPage >= lastPage}
+                        onClick={() => visit({}, currentPage + 1)}
+                    >
+                        Siguiente <ChevronRight size={19} />
+                    </button>
+                </nav>
+            )}
             <dialog
                 {...dialog}
                 className="en-dialog"
                 aria-labelledby="record-dialog-title"
                 onClick={(event) => {
-                    if (event.target === event.currentTarget) setSelected(null);
+                    if (event.target === event.currentTarget)
+                        setDialogOpen(false);
                 }}
             >
                 {selected && (
@@ -336,44 +448,95 @@ export function RecordBrowser() {
                             <span>Ficha de registro</span>
                             <button
                                 type="button"
-                                onClick={() => setSelected(null)}
+                                onClick={() => setDialogOpen(false)}
                                 aria-label="Cerrar ficha"
                             >
                                 <X size={23} />
                             </button>
                         </div>
                         <div className="en-dialog-content">
-                            <div className="en-detail-portrait">
-                                <img
-                                    src={selected.portrait}
-                                    alt="Silueta de una persona"
+                            <div
+                                className={
+                                    selected.has_photo
+                                        ? 'en-detail-portrait en-detail-portrait--photo'
+                                        : 'en-detail-portrait'
+                                }
+                            >
+                                <Portrait
+                                    key={selected.folio}
+                                    record={selected}
+                                    large
                                 />
                             </div>
                             <span className="en-person-type">
-                                {selected.type}
+                                {selected.type_label}
+                                {selected.status_label &&
+                                    ` · ${selected.status_label}`}
                             </span>
                             <h2 id="record-dialog-title">{selected.name}</h2>
                             <dl className="en-detail-data">
                                 <div>
                                     <dt>Edad</dt>
-                                    <dd>{selected.age} años</dd>
+                                    <dd>{ageLabel(selected.age)}</dd>
                                 </div>
                                 <div>
-                                    <dt>Estado</dt>
-                                    <dd>{selected.state}</dd>
+                                    <dt>Lugar</dt>
+                                    <dd>{placeLabel(selected)}</dd>
                                 </div>
                                 <div>
-                                    <dt>
-                                        {selected.type ===
-                                        'Persona desaparecida'
-                                            ? 'Fecha de desaparición'
-                                            : 'Fecha de registro'}
-                                    </dt>
-                                    <dd>{selected.date}</dd>
+                                    <dt>{dateTitle(selected, true)}</dt>
+                                    <dd>
+                                        {selected.event_date_label ??
+                                            'Sin fecha'}
+                                    </dd>
                                 </div>
                             </dl>
-                            <h3>Descripción</h3>
-                            <p>{selected.description}</p>
+                            {selected.traits.length > 0 && (
+                                <>
+                                    <h3>Rasgos</h3>
+                                    <dl className="en-detail-data">
+                                        {selected.traits.map((trait) => (
+                                            <div key={trait.label}>
+                                                <dt>{trait.label}</dt>
+                                                <dd>{trait.value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </>
+                            )}
+                            {selected.distinguishing_marks && (
+                                <>
+                                    <h3>Señas particulares</h3>
+                                    <p>{selected.distinguishing_marks}</p>
+                                </>
+                            )}
+                            {selected.clothing && (
+                                <>
+                                    <h3>Prendas de vestir</h3>
+                                    <p>{selected.clothing}</p>
+                                </>
+                            )}
+                            {!selected.traits.length &&
+                                !selected.distinguishing_marks &&
+                                !selected.clothing && (
+                                    <>
+                                        <h3>Descripción</h3>
+                                        <p>
+                                            {selected.description ??
+                                                'Aún no hay una descripción física registrada.'}
+                                        </p>
+                                    </>
+                                )}
+                            {selected.authority && (
+                                <>
+                                    <h3>Autoridad responsable</h3>
+                                    <p>
+                                        Para aportar información, comunícate con
+                                        la autoridad que registró la ficha:{' '}
+                                        {selected.authority}.
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </>
                 )}
@@ -382,149 +545,10 @@ export function RecordBrowser() {
     );
 }
 
-export function StatisticsPanel() {
-    const [group, setGroup] = useState('state');
-    const [state, setState] = useState('');
-    const records = exampleRecords.filter(
-        (record) => !state || record.state === state,
-    );
-    const groups =
-        group === 'state'
-            ? states
-            : ['18 a 29 años', '30 a 39 años', '40 años o más'];
-    const bars = groups.map((label, index) => ({
-        label,
-        count: records.filter((record) =>
-            group === 'state'
-                ? record.state === label
-                : index === 0
-                  ? record.age < 30
-                  : index === 1
-                    ? record.age >= 30 && record.age < 40
-                    : record.age >= 40,
-        ).length,
-    }));
-    return (
-        <section
-            className="en-statistics"
-            id="estadisticas"
-            aria-labelledby="statistics-title"
-        >
-            <div className="en-statistics-inner">
-                <div className="en-statistics-heading">
-                    <div>
-                        <div className="en-section-kicker en-kicker-light">
-                            <span>02</span> / ESTADÍSTICAS
-                        </div>
-                        <h2 id="statistics-title">
-                            MIRAR LOS DATOS.
-                            <br />
-                            <em>SEGUIR BUSCANDO.</em>
-                        </h2>
-                        <p>
-                            Consulta cómo se distribuyen los registros.
-                            Selecciona un estado para explorar sus datos.
-                        </p>
-                    </div>
-                    <label className="en-statistics-state">
-                        Estado
-                        <select
-                            value={state}
-                            onChange={(event) => setState(event.target.value)}
-                        >
-                            <option value="">Todos los estados</option>
-                            {states.map((item) => (
-                                <option key={item}>{item}</option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
-                <p className="en-statistics-note">
-                    Distribución de los registros según los filtros
-                    seleccionados.
-                </p>
-                <div className="en-statistics-body">
-                    <div className="en-statistics-totals" aria-live="polite">
-                        <div>
-                            <strong>{records.length}</strong>
-                            <span>Registros en esta vista</span>
-                        </div>
-                        <div>
-                            <strong>
-                                {
-                                    records.filter(
-                                        (record) =>
-                                            record.type ===
-                                            'Persona desaparecida',
-                                    ).length
-                                }
-                            </strong>
-                            <span>Personas desaparecidas</span>
-                        </div>
-                        <div>
-                            <strong>
-                                {
-                                    records.filter(
-                                        (record) =>
-                                            record.type ===
-                                            'Solicitud de identificación',
-                                    ).length
-                                }
-                            </strong>
-                            <span>Solicitudes de identificación</span>
-                        </div>
-                    </div>
-                    <div className="en-statistics-chart">
-                        <div
-                            className="en-chart-options"
-                            aria-label="Agrupar estadísticas"
-                        >
-                            <button
-                                type="button"
-                                aria-pressed={group === 'state'}
-                                onClick={() => setGroup('state')}
-                            >
-                                Por estado
-                            </button>
-                            <button
-                                type="button"
-                                aria-pressed={group === 'age'}
-                                onClick={() => setGroup('age')}
-                            >
-                                Por edad
-                            </button>
-                        </div>
-                        <div className="en-chart-bars" aria-live="polite">
-                            {bars.map(({ label, count }) => (
-                                <div className="en-chart-row" key={label}>
-                                    <div>
-                                        <span>{label}</span>
-                                        <strong>
-                                            {count}{' '}
-                                            {count === 1
-                                                ? 'registro'
-                                                : 'registros'}
-                                        </strong>
-                                    </div>
-                                    <div
-                                        className="en-chart-track"
-                                        aria-hidden="true"
-                                    >
-                                        <span
-                                            style={{
-                                                width: `${records.length ? (count / records.length) * 100 : 0}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-}
+const requestTypes: Option[] = [
+    { value: 'search', label: 'Búsqueda de una persona' },
+    { value: 'identification', label: 'Identificación de una persona' },
+];
 
 export function RequestComposer({
     open,
@@ -535,7 +559,7 @@ export function RequestComposer({
 }) {
     const dialog = useDialog(open, onClose);
     const [preview, setPreview] = useState(false);
-    const [type, setType] = useState('Búsqueda de una persona');
+    const [type, setType] = useState(requestTypes[0].value);
     const [name, setName] = useState('');
     const [place, setPlace] = useState('');
     const [description, setDescription] = useState('');
@@ -543,6 +567,11 @@ export function RequestComposer({
     const [photo, setPhoto] = useState<File | null>(null);
     const [photoUrl, setPhotoUrl] = useState('');
     const [error, setError] = useState('');
+    const [serverErrors, setServerErrors] = useState<Record<string, string>>(
+        {},
+    );
+    const [sending, setSending] = useState(false);
+    const [sent, setSent] = useState(false);
     const heading = useRef<HTMLHeadingElement>(null);
     useEffect(() => {
         if (!photo) {
@@ -558,7 +587,39 @@ export function RequestComposer({
     }, [open, preview]);
     const submit = (event: FormEvent) => {
         event.preventDefault();
+        setServerErrors({});
         setPreview(true);
+    };
+    const send = () => {
+        setSending(true);
+        router.post(
+            route('requests.store'),
+            { type, name, place, description, contact_email: contact, photo },
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setServerErrors({});
+                    setSent(true);
+                },
+                onError: (errors) => setServerErrors(errors),
+                onFinish: () => setSending(false),
+            },
+        );
+    };
+    const close = () => {
+        if (sent) {
+            setSent(false);
+            setPreview(false);
+            setType(requestTypes[0].value);
+            setName('');
+            setPlace('');
+            setDescription('');
+            setContact('');
+            setPhoto(null);
+        }
+        onClose();
     };
     return (
         <dialog
@@ -566,7 +627,7 @@ export function RequestComposer({
             className="en-dialog en-request-dialog"
             aria-labelledby="request-dialog-title"
             onClick={(event) => {
-                if (event.target === event.currentTarget) onClose();
+                if (event.target === event.currentTarget) close();
             }}
         >
             <div className="en-dialog-header">
@@ -575,7 +636,7 @@ export function RequestComposer({
                 </span>
                 <button
                     type="button"
-                    onClick={onClose}
+                    onClick={close}
                     aria-label="Cerrar solicitud"
                 >
                     <X size={23} />
@@ -583,11 +644,29 @@ export function RequestComposer({
             </div>
             <div className="en-dialog-content">
                 <h2 ref={heading} tabIndex={-1} id="request-dialog-title">
-                    {preview
-                        ? 'Vista previa de tu solicitud'
-                        : 'Crear solicitud'}
+                    {sent
+                        ? 'Solicitud recibida'
+                        : preview
+                          ? 'Vista previa de tu solicitud'
+                          : 'Crear solicitud'}
                 </h2>
-                {preview ? (
+                {sent ? (
+                    <div className="en-request-preview">
+                        <p className="en-demo-note">
+                            <Check size={19} /> Recibimos tu solicitud. Será
+                            revisada antes de publicarse.
+                        </p>
+                        <div className="en-dialog-actions">
+                            <button
+                                type="button"
+                                className="en-primary-button"
+                                onClick={close}
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                ) : preview ? (
                     <div className="en-request-preview">
                         <p className="en-demo-note">
                             <Check size={19} /> Tu borrador está listo para
@@ -600,7 +679,10 @@ export function RequestComposer({
                                 alt="Fotografía de la solicitud"
                             />
                         )}
-                        <span className="en-person-type">{type}</span>
+                        <span className="en-person-type">
+                            {requestTypes.find((item) => item.value === type)
+                                ?.label ?? type}
+                        </span>
                         <h3>{name || 'Persona por identificar'}</h3>
                         <dl className="en-detail-data">
                             <div>
@@ -614,6 +696,15 @@ export function RequestComposer({
                         </dl>
                         <h3>Descripción</h3>
                         <p className="en-draft-description">{description}</p>
+                        {Object.values(serverErrors).map((message) => (
+                            <p
+                                role="alert"
+                                className="en-form-error"
+                                key={message}
+                            >
+                                {message}
+                            </p>
+                        ))}
                         <div className="en-dialog-actions">
                             <button
                                 type="button"
@@ -625,9 +716,20 @@ export function RequestComposer({
                             <button
                                 type="button"
                                 className="en-primary-button"
-                                onClick={onClose}
+                                disabled={sending}
+                                aria-busy={sending}
+                                onClick={send}
                             >
-                                Cerrar vista previa
+                                {sending ? 'Enviando…' : 'Enviar solicitud'}{' '}
+                                {sending ? (
+                                    <LoaderCircle
+                                        className="en-spin"
+                                        size={19}
+                                        aria-hidden="true"
+                                    />
+                                ) : (
+                                    <ArrowUpRight size={19} />
+                                )}
                             </button>
                         </div>
                     </div>
@@ -635,7 +737,7 @@ export function RequestComposer({
                     <>
                         <p>
                             Agrega la información que tengas. Podrás revisar la
-                            solicitud antes de continuar.
+                            solicitud antes de enviarla.
                         </p>
                         <form onSubmit={submit} className="en-request-form">
                             <label>
@@ -646,10 +748,14 @@ export function RequestComposer({
                                         setType(event.target.value)
                                     }
                                 >
-                                    <option>Búsqueda de una persona</option>
-                                    <option>
-                                        Identificación de una persona
-                                    </option>
+                                    {requestTypes.map((item) => (
+                                        <option
+                                            key={item.value}
+                                            value={item.value}
+                                        >
+                                            {item.label}
+                                        </option>
+                                    ))}
                                 </select>
                             </label>
                             <label>

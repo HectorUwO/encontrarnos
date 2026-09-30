@@ -1,9 +1,11 @@
+import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowUpRight } from 'lucide-react';
+import { PageProps } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export default function VerifyEmail({ status }: { status?: string }) {
+    const { auth } = usePage<PageProps>().props;
     const { post, processing } = useForm({});
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -17,10 +19,17 @@ export default function VerifyEmail({ status }: { status?: string }) {
                 <span>VERIFICACIÓN DE CUENTA</span>
                 <h2>Verifica tu correo</h2>
                 <p>
-                    Te enviamos un enlace de verificación. Ábrelo desde tu
-                    correo electrónico para continuar.
+                    Te enviamos un enlace de verificación a{' '}
+                    <strong>{auth.user.email}</strong>. Ábrelo desde tu correo
+                    electrónico para activar tu cuenta.
                 </p>
             </div>
+            {status === 'email-changed' && (
+                <div className="en-auth-status" role="status">
+                    Cambiaste tu correo. Enviamos un enlace a la nueva dirección
+                    para que la verifiques.
+                </div>
+            )}
             {status === 'verification-link-sent' && (
                 <div className="en-auth-status" role="status">
                     Enviamos un nuevo enlace de verificación a tu correo.
@@ -31,8 +40,9 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     type="submit"
                     className="en-auth-submit"
                     disabled={processing}
+                    aria-busy={processing}
                 >
-                    Reenviar enlace <ArrowUpRight size={19} />
+                    Reenviar enlace <ActionIcon pending={processing} />
                 </button>
             </form>
             <p className="en-auth-switch">

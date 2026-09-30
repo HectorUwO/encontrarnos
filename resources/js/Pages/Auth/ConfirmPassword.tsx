@@ -1,6 +1,6 @@
+import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowUpRight } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 export default function ConfirmPassword() {
@@ -43,8 +43,9 @@ export default function ConfirmPassword() {
                     type="submit"
                     className="en-auth-submit"
                     disabled={processing}
+                    aria-busy={processing}
                 >
-                    Confirmar <ArrowUpRight size={19} />
+                    Confirmar <ActionIcon pending={processing} />
                 </button>
             </form>
         </GuestLayout>

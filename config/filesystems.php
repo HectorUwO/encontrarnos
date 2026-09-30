@@ -47,6 +47,26 @@ return [
             'report' => false,
         ],
 
+        // Fotografías de las fichas (imagenes/xx/<sha256>.jpg). En local apunta a
+        // la carpeta del colector; en producción puede cambiarse a un bucket.
+        'record_photos' => [
+            'driver' => 'local',
+            'root' => env('RECORD_PHOTOS_ROOT') ?: storage_path('app/private/record-photos'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Versiones reducidas de esas fotografías (thumb/<sha256>.jpg), que se
+        // crean al pedirlas por primera vez y pueden borrarse sin riesgo.
+        'record_thumbnails' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/record-thumbnails'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

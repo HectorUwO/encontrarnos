@@ -1,6 +1,7 @@
+import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowUpRight, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 export default function Register() {
@@ -125,8 +126,9 @@ export default function Register() {
                     className="en-auth-submit"
                     type="submit"
                     disabled={processing}
+                    aria-busy={processing}
                 >
-                    Crear cuenta <ArrowUpRight size={19} />
+                    Crear cuenta <ActionIcon pending={processing} />
                 </button>
             </form>
             <p className="en-auth-switch">

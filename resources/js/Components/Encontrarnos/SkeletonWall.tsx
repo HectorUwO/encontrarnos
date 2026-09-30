@@ -132,7 +132,9 @@ export default function SkeletonWall() {
                         className="en-wall-col"
                         key={column}
                         style={
-                            { '--col': WALL_COLUMNS - 1 - column } as CSSProperties
+                            {
+                                '--col': WALL_COLUMNS - 1 - column,
+                            } as CSSProperties
                         }
                     >
                         {Array.from(

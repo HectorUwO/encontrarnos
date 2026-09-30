@@ -1,16 +1,7 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
 
-export default function UpdatePasswordForm({
-    className = '',
-}: {
-    className?: string;
-}) {
+export default function UpdatePasswordForm() {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
@@ -28,19 +19,17 @@ export default function UpdatePasswordForm({
         password_confirmation: '',
     });
 
-    const updatePassword: FormEventHandler = (e) => {
-        e.preventDefault();
-
+    const updatePassword: FormEventHandler = (event) => {
+        event.preventDefault();
         put(route('password.update'), {
             preserveScroll: true,
             onSuccess: () => reset(),
-            onError: (errors) => {
-                if (errors.password) {
+            onError: (formErrors) => {
+                if (formErrors.password) {
                     reset('password', 'password_confirmation');
                     passwordInput.current?.focus();
                 }
-
-                if (errors.current_password) {
+                if (formErrors.current_password) {
                     reset('current_password');
                     currentPasswordInput.current?.focus();
                 }
@@ -49,96 +38,81 @@ export default function UpdatePasswordForm({
     };
 
     return (
-        <section className={className}>
+        <section className="en-profile-card">
             <header>
-                <h2 className="text-lg font-medium text-gray-900">
-                    Update Password
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-600">
-                    Ensure your account is using a long, random password to stay
-                    secure.
-                </p>
+                <span className="en-work-kicker">SEGURIDAD</span>
+                <h2>Cambiar contraseña</h2>
+                <p>Usa una contraseña larga y única para proteger tu cuenta.</p>
             </header>
-
-            <form onSubmit={updatePassword} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel
-                        htmlFor="current_password"
-                        value="Current Password"
-                    />
-
-                    <TextInput
+            {recentlySuccessful && (
+                <div className="en-profile-status" role="status">
+                    Actualizamos tu contraseña.
+                </div>
+            )}
+            <form onSubmit={updatePassword} className="en-profile-form">
+                <div className="en-profile-field">
+                    <label htmlFor="current_password">Contraseña actual</label>
+                    <input
                         id="current_password"
                         ref={currentPasswordInput}
-                        value={data.current_password}
-                        onChange={(e) =>
-                            setData('current_password', e.target.value)
-                        }
                         type="password"
-                        className="mt-1 block w-full"
+                        value={data.current_password}
+                        onChange={(event) =>
+                            setData('current_password', event.target.value)
+                        }
                         autoComplete="current-password"
                     />
-
-                    <InputError
-                        message={errors.current_password}
-                        className="mt-2"
-                    />
+                    {errors.current_password && (
+                        <span className="en-profile-error">
+                            {errors.current_password}
+                        </span>
+                    )}
                 </div>
-
-                <div>
-                    <InputLabel htmlFor="password" value="New Password" />
-
-                    <TextInput
+                <div className="en-profile-field">
+                    <label htmlFor="password">Contraseña nueva</label>
+                    <input
                         id="password"
                         ref={passwordInput}
+                        type="password"
                         value={data.password}
-                        onChange={(e) => setData('password', e.target.value)}
-                        type="password"
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div>
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
-                        id="password_confirmation"
-                        value={data.password_confirmation}
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
+                        onChange={(event) =>
+                            setData('password', event.target.value)
                         }
-                        type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
+                    {errors.password && (
+                        <span className="en-profile-error">
+                            {errors.password}
+                        </span>
+                    )}
                 </div>
-
-                <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
-
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
+                <div className="en-profile-field">
+                    <label htmlFor="password_confirmation">
+                        Confirmar contraseña nueva
+                    </label>
+                    <input
+                        id="password_confirmation"
+                        type="password"
+                        value={data.password_confirmation}
+                        onChange={(event) =>
+                            setData('password_confirmation', event.target.value)
+                        }
+                        autoComplete="new-password"
+                    />
+                    {errors.password_confirmation && (
+                        <span className="en-profile-error">
+                            {errors.password_confirmation}
+                        </span>
+                    )}
+                </div>
+                <div className="en-profile-actions">
+                    <button
+                        type="submit"
+                        className="en-profile-button"
+                        disabled={processing}
                     >
-                        <p className="text-sm text-gray-600">
-                            Saved.
-                        </p>
-                    </Transition>
+                        Actualizar contraseña
+                    </button>
                 </div>
             </form>
         </section>

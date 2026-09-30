@@ -1,11 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
-
+/*
+ * Las tipografías se sirven desde el propio dominio (WOFF2, subconjunto latino)
+ * para no depender de un CSS externo que bloquee el primer pintado. Las licencias
+ * OFL están junto a los archivos, en public/fonts.
+ */
 @font-face {
     font-family: 'Barlow Condensed';
     font-style: normal;
     font-weight: 800;
     font-display: swap;
-    src: url('../../public/fonts/barlow-condensed-800.ttf') format('truetype');
+    src: url('../../public/fonts/barlow-condensed-800.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('../../public/fonts/manrope-800.woff2') format('woff2');
 }
 
 @tailwind base;

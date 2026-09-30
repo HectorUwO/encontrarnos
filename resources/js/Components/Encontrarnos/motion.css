@@ -1,0 +1,336 @@
+/*
+ * Movimiento de Encontrarnos.
+ *
+ * Pocas reglas y siempre las mismas: lo que aparece llega con una salida suave, nada se
+ * repite sin fin salvo mientras algo carga, y todo se apaga con "reducir movimiento".
+ * El tono es sereno a propósito: aquí se buscan personas, no se juega con las cifras.
+ */
+:root {
+    --en-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --en-fast: 160ms;
+    --en-base: 280ms;
+    --en-slow: 560ms;
+}
+
+@keyframes en-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+}
+@keyframes en-fade {
+    from {
+        opacity: 0;
+    }
+}
+@keyframes en-grow {
+    from {
+        transform: scaleX(0);
+    }
+}
+@keyframes en-rise {
+    from {
+        transform: scaleY(0);
+    }
+}
+@keyframes en-wipe {
+    from {
+        clip-path: inset(0 100% 0 0);
+    }
+}
+@keyframes en-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@keyframes en-shimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+/* Contenido de cada página al llegar. Sin "fill": al terminar no deja capas ni transformaciones. */
+.en-page-enter {
+    animation: en-enter var(--en-slow) var(--en-ease);
+}
+
+/*
+ * Aparece al entrar en pantalla (ver Reveal). El escalonado sale de --i, y solo cuenta
+ * hasta el sexto elemento para que una lista larga no se tarde en mostrarse.
+ */
+.en-reveal:not(.is-visible) {
+    opacity: 0;
+}
+.en-reveal.is-visible {
+    animation: en-enter var(--en-slow) var(--en-ease) backwards;
+    animation-delay: calc(min(var(--i, 0), 6) * 70ms);
+}
+
+/* Igual, pero escalonando a los hijos de un contenedor (rejillas de tarjetas). */
+.en-stagger:not(.is-visible) > * {
+    opacity: 0;
+}
+.en-stagger.is-visible > * {
+    animation: en-enter var(--en-slow) var(--en-ease) backwards;
+    animation-delay: calc(min(var(--i, 0), 6) * 70ms);
+}
+
+/* Barras que crecen desde la izquierda cuando su sección se muestra. */
+.en-reveal.is-visible .en-grow {
+    transform-origin: left center;
+    animation: en-grow 900ms var(--en-ease) backwards;
+    animation-delay: calc(160ms + min(var(--i, 0), 10) * 45ms);
+}
+/* Las barras verticales de las gráficas suben desde la base, una tras otra. */
+.en-reveal.is-visible .en-rise {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: en-rise 700ms var(--en-ease) backwards;
+    animation-delay: calc(120ms + min(var(--i, 0), 40) * 14ms);
+}
+/* Las entidades del mapa aparecen en cascada. */
+.en-reveal.is-visible .en-pop {
+    animation: en-fade 600ms ease backwards;
+    animation-delay: calc(min(var(--i, 0), 32) * 18ms);
+}
+/* Al cambiar de métrica o de periodo las barras se ajustan en lugar de saltar. */
+.en-stats-bar-track > span,
+.en-stats-compare-track > span {
+    transition:
+        width var(--en-slow) var(--en-ease),
+        background-color var(--en-fast) ease;
+}
+/* La gráfica se dibuja de izquierda a derecha. */
+.en-reveal.is-visible .en-wipe {
+    animation: en-wipe 1200ms var(--en-ease) backwards;
+    animation-delay: 120ms;
+}
+
+/* Hijos que entran uno tras otro sin numerarlos a mano (los primeros siete). */
+.en-stagger > :nth-child(2) {
+    --i: 1;
+}
+.en-stagger > :nth-child(3) {
+    --i: 2;
+}
+.en-stagger > :nth-child(4) {
+    --i: 3;
+}
+.en-stagger > :nth-child(5) {
+    --i: 4;
+}
+.en-stagger > :nth-child(6) {
+    --i: 5;
+}
+.en-stagger > :nth-child(7) {
+    --i: 6;
+}
+
+/* La silueta del estado llega desde un espacio que late mientras se descarga. */
+.en-state .en-state-outline.is-loading {
+    background:
+        linear-gradient(100deg, transparent 30%, #ffffff66 50%, transparent 70%)
+            0 0 / 200% 100%,
+        #172e2b14;
+    animation: en-shimmer 1.4s linear infinite;
+}
+svg.en-state-outline {
+    animation: en-fade 500ms var(--en-ease);
+}
+
+/* Cuando algo carga: el resultado anterior se atenúa en lugar de desaparecer. */
+.en-pending {
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity var(--en-base) var(--en-ease);
+}
+.en-spin {
+    animation: en-spin 0.8s linear infinite;
+}
+
+/* Imágenes que se descargan con calma: aparecen al cargar, sobre un fondo que late. */
+.en-fade-img {
+    opacity: 0;
+    transition: opacity var(--en-base) var(--en-ease);
+}
+.en-fade-img.is-loaded {
+    opacity: 1;
+}
+:is(.en-person-portrait, .en-request-card-photo, .en-detail-portrait):has(
+    .en-fade-img:not(.is-loaded)
+) {
+    background:
+        linear-gradient(100deg, transparent 30%, #ffffff8c 50%, transparent 70%)
+            0 0 / 200% 100%,
+        #e4ebdc;
+    animation: en-shimmer 1.4s linear infinite;
+}
+
+/* Tarjetas de fichas: llegan una tras otra y responden al puntero. */
+.en-person-card {
+    animation: en-enter var(--en-base) var(--en-ease) backwards;
+    animation-delay: calc(min(var(--i, 0), 8) * 35ms);
+    transition: background-color var(--en-base) var(--en-ease);
+}
+.en-person-card:hover {
+    background-color: #f6f8f0;
+}
+.en-person-open svg,
+.en-secondary-button svg,
+.en-primary-button svg {
+    transition: transform var(--en-base) var(--en-ease);
+}
+.en-person-card:hover .en-person-open svg,
+.en-person-open:hover svg,
+.en-secondary-button:hover svg,
+.en-primary-button:hover svg {
+    transform: translate(2px, -2px);
+}
+
+/* Botones: cambian de color con suavidad y se hunden un poco al pulsarlos. */
+.en-page
+    :is(
+        .en-primary-button,
+        .en-secondary-button,
+        .en-filter-toggle,
+        .en-person-open,
+        .en-plain-button
+    ) {
+    transition:
+        background-color var(--en-fast) ease,
+        border-color var(--en-fast) ease,
+        color var(--en-fast) ease,
+        transform var(--en-fast) var(--en-ease);
+}
+.en-page
+    :is(
+        .en-primary-button,
+        .en-secondary-button,
+        .en-filter-toggle,
+        .en-person-open
+    ):active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+}
+
+/* Panel que se despliega (filtros). La rejilla anima la altura sin medirla. */
+.en-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+        grid-template-rows var(--en-base) var(--en-ease),
+        visibility 0s linear var(--en-base);
+}
+.en-collapse.is-open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition-delay: 0s;
+}
+.en-collapse-inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Ventanas de diálogo: entran y salen (donde el navegador lo permite; si no, aparecen sin más). */
+.en-dialog {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    transition:
+        opacity var(--en-base) var(--en-ease),
+        transform var(--en-base) var(--en-ease),
+        overlay var(--en-base) allow-discrete,
+        display var(--en-base) allow-discrete;
+}
+.en-dialog[open] {
+    opacity: 1;
+    transform: none;
+}
+.en-dialog::backdrop {
+    opacity: 0;
+    transition:
+        opacity var(--en-base) var(--en-ease),
+        overlay var(--en-base) allow-discrete,
+        display var(--en-base) allow-discrete;
+}
+.en-dialog[open]::backdrop {
+    opacity: 1;
+}
+@starting-style {
+    .en-dialog[open] {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+    }
+    .en-dialog[open]::backdrop {
+        opacity: 0;
+    }
+}
+
+/* Búsqueda por fotografía: el área de carga responde, la vista previa y los resultados llegan con calma. */
+.en-dropzone {
+    transition:
+        background-color var(--en-base) var(--en-ease),
+        border-color var(--en-base) var(--en-ease),
+        transform var(--en-base) var(--en-ease);
+}
+.en-dropzone-dragging {
+    transform: scale(1.01);
+}
+.en-dropzone-filled img {
+    animation: en-fade var(--en-slow) var(--en-ease);
+}
+.en-photo-outcome {
+    animation: en-enter var(--en-base) var(--en-ease);
+}
+.en-photo-matches li {
+    animation: en-enter var(--en-base) var(--en-ease) backwards;
+    animation-delay: calc(120ms + min(var(--i, 0), 8) * 50ms);
+}
+
+/* Pantallas de acceso y tablero (no usan PublicLayout): el contenido entra al montarse. */
+.en-auth-content,
+.en-work-content {
+    animation: en-enter var(--en-slow) var(--en-ease);
+}
+
+/* Menú móvil. */
+@media (max-width: 950px) {
+    .en-nav-open {
+        animation: en-enter var(--en-base) var(--en-ease);
+    }
+}
+
+/* Mensajes de error y avisos: aparecen sin sobresaltar. */
+.en-form-error,
+.en-auth-error,
+.en-auth-status {
+    animation: en-enter var(--en-base) var(--en-ease);
+}
+
+/* Al terminar de moverse el foco pasa a <main>; no necesita marco. */
+main:focus {
+    outline: none;
+}
+
+@media print {
+    .en-reveal:not(.is-visible),
+    .en-stagger:not(.is-visible) > * {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        animation-delay: 0s !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+        scroll-behavior: auto !important;
+    }
+    .en-reveal:not(.is-visible),
+    .en-stagger:not(.is-visible) > * {
+        opacity: 1;
+    }
+}

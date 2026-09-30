@@ -1,10 +1,13 @@
+import { darkBackgroundSymbol } from '@/brand';
+import { classNames } from '@/classNames';
+import { Reveal } from '@/Components/Encontrarnos/motion';
 import { ActionGrid } from '@/Components/Encontrarnos/PublicTools';
 import SkeletonWall from '@/Components/Encontrarnos/SkeletonWall';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { PageProps } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowDown, ArrowUpRight, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 
 const PARTICIPANTS = [
     {
@@ -35,12 +38,10 @@ const PARTICIPANTS = [
 ];
 
 export default function Welcome({ auth }: PageProps) {
-    const [openParticipant, setOpenParticipant] = useState<number | null>(
-        null,
-    );
+    const [openParticipant, setOpenParticipant] = useState<number | null>(null);
 
     return (
-        <PublicLayout>
+        <>
             <Head title="Hasta encontrarnos · Búsqueda de personas en México" />
             <section className="en-manifesto" aria-labelledby="hero-title">
                 <div className="en-manifesto-copy">
@@ -56,7 +57,7 @@ export default function Welcome({ auth }: PageProps) {
                     </h1>
                     <div className="en-manifesto-bottom">
                         <span className="en-manifesto-cross" aria-hidden="true">
-                            <img src="/3.png" alt="" />
+                            <img src={darkBackgroundSymbol} alt="" />
                         </span>
                         <div>
                             <p>
@@ -102,7 +103,7 @@ export default function Welcome({ auth }: PageProps) {
             </section>
 
             <section className="en-institutions en-section" id="participar">
-                <div className="en-institutions-heading">
+                <Reveal className="en-institutions-heading">
                     <p className="en-section-kicker">
                         <span>+</span> / QUIÉNES SOMOS
                     </p>
@@ -126,14 +127,18 @@ export default function Welcome({ auth }: PageProps) {
                         {auth.user ? 'Ir a mi espacio' : 'Crear una cuenta'}
                         <ArrowUpRight size={22} />
                     </Link>
-                </div>
+                </Reveal>
                 <div className="en-participants">
                     <p>UN ESPACIO PARA</p>
                     {PARTICIPANTS.map(({ name, description }, index) => {
                         const isOpen = openParticipant === index;
                         return (
-                            <div
-                                className={`en-participant${isOpen ? ' is-open' : ''}`}
+                            <Reveal
+                                index={index}
+                                className={classNames(
+                                    'en-participant',
+                                    isOpen && 'is-open',
+                                )}
                                 key={name}
                             >
                                 <button
@@ -160,11 +165,15 @@ export default function Welcome({ auth }: PageProps) {
                                         <p>{description}</p>
                                     </div>
                                 </div>
-                            </div>
+                            </Reveal>
                         );
                     })}
                 </div>
             </section>
-        </PublicLayout>
+        </>
     );
 }
+
+Welcome.layout = (page: ReactNode) => (
+    <PublicLayout enter={false}>{page}</PublicLayout>
+);

@@ -6,9 +6,19 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+        @if (str_ends_with(request()->getHost(), '.trycloudflare.com'))
+            @php
+                Vite::useHotFile('');
+            @endphp
+        @endif
+
+        <!-- Fonts: propias, se piden en paralelo con el CSS en lugar de esperar a que se descubran en él -->
+        @foreach (['barlow-condensed-800', 'manrope-800'] as $font)
+            <link rel="preload" href="{{ Vite::asset("public/fonts/{$font}.woff2") }}" as="font" type="font/woff2" crossorigin>
+        @endforeach
 
         <!-- Scripts -->
         @routes

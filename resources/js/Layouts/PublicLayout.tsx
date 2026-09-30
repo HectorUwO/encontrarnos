@@ -2,6 +2,13 @@ import {
     MobileNavigation,
     actions,
 } from '@/Components/Encontrarnos/PublicTools';
+import {
+    colorSymbol,
+    darkBackgroundSymbol,
+    lspLogo,
+    mexicanFlag,
+    utLogo,
+} from '@/brand';
 import { PageProps } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, Menu, X } from 'lucide-react';
@@ -11,7 +18,7 @@ import '../Pages/welcome.css';
 export function Brand({ light = false }: { light?: boolean }) {
     return (
         <span className="en-brand">
-            <img src={light ? '/3.png' : '/1.png'} alt="" />
+            <img src={light ? darkBackgroundSymbol : colorSymbol} alt="" />
             <span>
                 encontrarnos<span className="en-brand-period">.</span>
             </span>
@@ -19,10 +26,20 @@ export function Brand({ light = false }: { light?: boolean }) {
     );
 }
 
-export default function PublicLayout({ children }: PropsWithChildren) {
+/**
+ * Cabecera, pie y menú de las páginas públicas. Cada página lo declara como layout
+ * persistente (`Pagina.layout = ...`), así que no se vuelve a montar al navegar: solo
+ * cambia el contenido, que entra con un fundido suave (salvo en la portada, que ya
+ * trae su propia animación).
+ */
+export default function PublicLayout({
+    children,
+    enter = true,
+}: PropsWithChildren<{ enter?: boolean }>) {
     const { auth } = usePage<PageProps>().props;
     const { url } = usePage();
     const [menuOpen, setMenuOpen] = useState(false);
+    const path = url.split('?')[0];
 
     useEffect(() => {
         const close = (event: KeyboardEvent) => {
@@ -31,6 +48,9 @@ export default function PublicLayout({ children }: PropsWithChildren) {
         window.addEventListener('keydown', close);
         return () => window.removeEventListener('keydown', close);
     }, []);
+
+    // Con el layout persistente el menú móvil seguiría abierto en la página nueva.
+    useEffect(() => setMenuOpen(false), [path]);
 
     const closeMenu = () => setMenuOpen(false);
 
@@ -52,6 +72,7 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                         <Link
                             key={href}
                             href={href}
+                            prefetch
                             aria-current={
                                 url.startsWith(href) ? 'page' : undefined
                             }
@@ -81,7 +102,11 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                 </button>
             </header>
 
-            <main id="contenido">{children}</main>
+            <main id="contenido" tabIndex={-1}>
+                <div key={path} className={enter ? 'en-page-enter' : undefined}>
+                    {children}
+                </div>
+            </main>
 
             <footer className="en-footer">
                 <div className="en-footer-top">
@@ -111,7 +136,7 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                         <div>
                             <p className="en-footer-title">Secciones</p>
                             {actions.map(({ href, short }) => (
-                                <Link key={href} href={href}>
+                                <Link key={href} href={href} prefetch>
                                     {short}
                                 </Link>
                             ))}
@@ -141,12 +166,12 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                         {[
                             [
                                 'https://www.facebook.com/LSPUTNay',
-                                '/LSPlogo-footer.png',
+                                lspLogo,
                                 'Licenciatura en Seguridad Pública',
                             ],
                             [
                                 'https://www.utnay.edu.mx/',
-                                '/UTlogo.png',
+                                utLogo,
                                 'Universidad Tecnológica de Nayarit',
                             ],
                         ].map(([href, src, alt]) => (
@@ -157,7 +182,13 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                                 rel="noopener noreferrer"
                                 aria-label={alt}
                             >
-                                <img src={src} alt="" loading="lazy" />
+                                <img
+                                    src={src}
+                                    width={192}
+                                    height={192}
+                                    alt=""
+                                    loading="lazy"
+                                />
                             </a>
                         ))}
                     </div>
@@ -165,7 +196,9 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                         <span className="en-footer-country">
                             <img
                                 className="en-flag"
-                                src="/flag.png"
+                                src={mexicanFlag}
+                                width={120}
+                                height={69}
                                 alt="Bandera de México"
                             />
                             Encontrarnos · México · 2026

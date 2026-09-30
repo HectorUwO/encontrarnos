@@ -1,6 +1,6 @@
+import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowUpRight } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 export default function ForgotPassword({ status }: { status?: string }) {
@@ -50,8 +50,9 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     type="submit"
                     className="en-auth-submit"
                     disabled={processing}
+                    aria-busy={processing}
                 >
-                    Enviar enlace <ArrowUpRight size={19} />
+                    Enviar enlace <ActionIcon pending={processing} />
                 </button>
             </form>
         </GuestLayout>

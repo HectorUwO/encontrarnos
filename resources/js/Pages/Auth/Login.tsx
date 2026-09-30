@@ -1,6 +1,7 @@
+import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowUpRight, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 export default function Login({
@@ -114,8 +115,9 @@ export default function Login({
                     className="en-auth-submit"
                     type="submit"
                     disabled={processing}
+                    aria-busy={processing}
                 >
-                    Ingresar a Encontrarnos <ArrowUpRight size={19} />
+                    Ingresar a Encontrarnos <ActionIcon pending={processing} />
                 </button>
             </form>
             <p className="en-auth-switch">

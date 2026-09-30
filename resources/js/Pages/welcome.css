@@ -102,7 +102,26 @@ html {
     object-fit: contain;
 }
 .en-brand-period {
-    color: var(--en-red);
+    --period-from: var(--en-red);
+    --period-to: var(--en-gold);
+    display: inline-block;
+    color: var(--period-from);
+    transform-origin: 50% 85%;
+    transition: color 0.4s ease;
+}
+.en-brand:hover .en-brand-period,
+a:focus-visible .en-brand .en-brand-period {
+    color: var(--period-to);
+    animation: en-period-pulse 0.9s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@keyframes en-period-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.7) translateY(-2px);
+    }
 }
 .en-nav {
     display: flex;
@@ -171,6 +190,9 @@ html {
 }
 .en-manifesto-copy {
     z-index: 2;
+    text-shadow:
+        0 1px 2px #0a1816a6,
+        0 0 24px #0a1816a6;
 }
 .en-manifesto h1 {
     margin: 38px 0 32px;
@@ -194,11 +216,25 @@ html {
     color: var(--en-paper);
 }
 .en-manifesto-bottom {
+    position: relative;
     display: flex;
     gap: 28px;
     align-items: flex-start;
     padding-top: 4px;
     max-width: 620px;
+}
+.en-manifesto-bottom::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -36px -80px -30px -44px;
+    pointer-events: none;
+    background: radial-gradient(
+        ellipse at 45% 50%,
+        #172e2bd9 0%,
+        #172e2bb3 42%,
+        #172e2b00 76%
+    );
 }
 .en-manifesto-cross {
     display: block;
@@ -219,7 +255,7 @@ html {
     line-height: 1.7;
     max-width: 455px;
     margin-top: 14px;
-    color: #c3ceb9;
+    color: #dde5d4;
 }
 .en-primary-button {
     display: inline-flex;
@@ -249,6 +285,7 @@ html {
     background: var(--en-paper);
     border-color: var(--en-paper);
     color: var(--en-ink);
+    text-shadow: none;
 }
 .en-manifesto-bottom .en-primary-button:hover {
     background: var(--en-red);
@@ -257,10 +294,33 @@ html {
 }
 .en-wall {
     --wall-gap: 12px;
-    --wall-feather-x: 12%;
+    --wall-base-cols: 3;
+    --wall-cols: 9;
     --wall-feather-y: 16%;
+    --wall-mask-x: linear-gradient(
+        to right,
+        transparent 0%,
+        #0000000f 6%,
+        #00000026 20%,
+        #0000002b 38%,
+        #0000002b 54%,
+        #00000033 59%,
+        #00000073 64%,
+        #000000d9 68%,
+        #000 72%,
+        #000 96%,
+        transparent 100%
+    );
+    --wall-mask-y: linear-gradient(
+        to bottom,
+        transparent,
+        #000 var(--wall-feather-y),
+        #000 calc(100% - var(--wall-feather-y)),
+        transparent
+    );
     position: relative;
     isolation: isolate;
+    pointer-events: none;
     margin: 18px 0 0 22px;
     min-height: 565px;
 }
@@ -281,43 +341,22 @@ html {
 }
 .en-wall-grid {
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: calc(
+        (100% - (var(--wall-base-cols) - 1) * var(--wall-gap)) /
+            var(--wall-base-cols) * var(--wall-cols) +
+            (var(--wall-cols) - 1) * var(--wall-gap)
+    );
     overflow: hidden;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--wall-cols), minmax(0, 1fr));
     gap: var(--wall-gap);
     align-items: start;
-    -webkit-mask-image:
-        linear-gradient(
-            to right,
-            transparent,
-            #000 var(--wall-feather-x),
-            #000 calc(100% - var(--wall-feather-x)),
-            transparent
-        ),
-        linear-gradient(
-            to bottom,
-            transparent,
-            #000 var(--wall-feather-y),
-            #000 calc(100% - var(--wall-feather-y)),
-            transparent
-        );
+    -webkit-mask-image: var(--wall-mask-x), var(--wall-mask-y);
     -webkit-mask-composite: source-in;
-    mask-image:
-        linear-gradient(
-            to right,
-            transparent,
-            #000 var(--wall-feather-x),
-            #000 calc(100% - var(--wall-feather-x)),
-            transparent
-        ),
-        linear-gradient(
-            to bottom,
-            transparent,
-            #000 var(--wall-feather-y),
-            #000 calc(100% - var(--wall-feather-y)),
-            transparent
-        );
+    mask-image: var(--wall-mask-x), var(--wall-mask-y);
     mask-composite: intersect;
 }
 .en-wall-col {
@@ -326,16 +365,22 @@ html {
     flex-direction: column;
     gap: var(--wall-gap);
     animation: en-wall-rise 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-    animation-delay: calc(var(--col, 0) * 110ms);
+    animation-delay: calc(var(--col, 0) * 70ms);
 }
-.en-wall-col:nth-child(1) {
+.en-wall-col > :nth-child(n + 6) {
+    display: none;
+}
+.en-wall-col:nth-last-child(3n + 3) {
     margin-top: -34px;
 }
-.en-wall-col:nth-child(2) {
+.en-wall-col:nth-last-child(3n + 2) {
     margin-top: -88px;
 }
-.en-wall-col:nth-child(3) {
+.en-wall-col:nth-last-child(3n + 1) {
     margin-top: -58px;
+}
+.en-wall-col:nth-last-child(n + 4) .en-sk-body {
+    filter: none;
 }
 .en-skeleton-poster {
     --u: 1px;
@@ -553,7 +598,7 @@ html {
     background: linear-gradient(
         100deg,
         transparent 32%,
-        #ffffff59 50%,
+        #ffffff21 50%,
         transparent 68%
     );
     transform: translateX(-100%);
@@ -867,82 +912,6 @@ html {
 }
 .en-solidarity-line svg {
     flex-shrink: 0;
-}
-.en-page .en-statistics {
-    padding: 85px max(4.5%, calc((100vw - 1456px) / 2));
-    background: #d2b675;
-    color: var(--en-ink);
-}
-.en-page .en-statistics-inner {
-    max-width: none;
-}
-.en-page .en-statistics h2 {
-    font: 800 clamp(56px, 5.9vw, 86px)/0.95 var(--en-display);
-    letter-spacing: -0.02em;
-    text-transform: uppercase;
-    margin: 23px 0;
-}
-.en-page .en-statistics h2 em {
-    color: var(--en-ink);
-}
-.en-page .en-statistics-heading p {
-    color: #253d2e;
-    font-size: 17px;
-}
-.en-page .en-statistics select {
-    background-color: #f4ecd6;
-    border: 1px solid var(--en-ink);
-    border-radius: 0;
-    color: var(--en-ink);
-}
-.en-page .en-statistics-note {
-    background: transparent;
-    color: #34472f;
-    border-left: none;
-    border-top: 1px solid #172e2b70;
-    border-bottom: 1px solid #172e2b70;
-    padding: 15px 0;
-    margin: 28px 0 32px;
-    font-size: 14px;
-}
-.en-page .en-statistics-body {
-    gap: 80px;
-}
-.en-page .en-statistics-totals > div {
-    border-color: #172e2b60;
-    padding-bottom: 15px;
-    gap: 25px;
-}
-.en-page .en-statistics-totals strong {
-    font: 800 76px/0.9 var(--en-display);
-    color: var(--en-ink);
-    width: 72px;
-}
-.en-page .en-statistics-totals span {
-    font-size: 16px;
-    font-weight: 600;
-}
-.en-page .en-chart-options button {
-    border: 1px solid var(--en-ink);
-    color: var(--en-ink);
-    border-radius: 0;
-    background: transparent;
-}
-.en-page .en-chart-options button[aria-pressed='true'] {
-    background: var(--en-ink);
-    color: #f6edda;
-}
-.en-page .en-chart-row strong {
-    color: var(--en-ink);
-}
-.en-page .en-chart-track {
-    background: #ad965d;
-    height: 19px;
-    border-radius: 0;
-}
-.en-page .en-chart-track span {
-    background: var(--en-red);
-    border-radius: 0;
 }
 .en-search-section {
     display: grid;
@@ -1417,7 +1386,8 @@ html {
     color: #d0b371;
 }
 .en-footer .en-brand-period {
-    color: #d0b371;
+    --period-from: var(--en-gold);
+    --period-to: var(--en-red-bright);
 }
 .en-footer-bottom {
     display: flex;
@@ -1583,13 +1553,12 @@ html {
         letter-spacing: 0.01em;
     }
     .en-wall {
+        --wall-base-cols: 2;
+        --wall-cols: 6;
         min-height: 480px;
         margin-top: 25px;
     }
-    .en-wall-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .en-wall-col:nth-child(3) {
+    .en-wall-col:nth-child(-n + 3) {
         display: none;
     }
     .en-page .en-action-grid {
@@ -1610,9 +1579,6 @@ html {
     .en-page .en-database-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 20px;
-    }
-    .en-page .en-statistics-body {
-        gap: 35px;
     }
     .en-search-section {
         gap: 35px;
@@ -1694,14 +1660,51 @@ html {
         margin-top: 24px;
     }
     .en-wall {
+        --wall-base-cols: 3;
+        --wall-cols: 3;
+        --wall-mask-x: linear-gradient(
+            to right,
+            transparent,
+            #000 12%,
+            #000 88%,
+            transparent
+        );
+        --wall-mask-y: linear-gradient(
+            to bottom,
+            transparent 0%,
+            #0000000f 8%,
+            #00000026 22%,
+            #0000002b 45%,
+            #00000033 56%,
+            #000000a6 60%,
+            #000 65%,
+            #000 93.6%,
+            transparent 100%
+        );
         margin: 25px 0 0;
         min-height: 440px;
     }
     .en-wall-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        top: -150%;
+        align-items: end;
     }
-    .en-wall-col:nth-child(3) {
-        display: flex;
+    .en-wall-col:nth-child(-n + 6) {
+        display: none;
+    }
+    .en-wall-col {
+        flex-direction: column-reverse;
+    }
+    .en-wall-col > :nth-child(n + 6) {
+        display: block;
+    }
+    .en-wall-col:nth-last-child(3n + 3) {
+        margin: 0 0 -34px;
+    }
+    .en-wall-col:nth-last-child(3n + 2) {
+        margin: 0 0 -88px;
+    }
+    .en-wall-col:nth-last-child(3n + 1) {
+        margin: 0 0 -58px;
     }
     .en-manifesto-foot {
         width: 100%;
@@ -1831,31 +1834,6 @@ html {
     .en-solidarity-line svg {
         width: 26px;
         height: 26px;
-    }
-    .en-page .en-statistics {
-        padding: 58px 5%;
-    }
-    .en-page .en-statistics h2 {
-        font-size: 56px;
-    }
-    .en-page .en-statistics-heading p {
-        font-size: 16px;
-    }
-    .en-page .en-statistics-note {
-        font-size: 13px;
-    }
-    .en-page .en-statistics-body {
-        gap: 30px;
-    }
-    .en-page .en-statistics-totals strong {
-        font-size: 63px;
-        width: 52px;
-    }
-    .en-page .en-statistics-totals span {
-        font-size: 15px;
-    }
-    .en-page .en-chart-row strong {
-        font-size: 13px;
     }
     .en-search-section {
         grid-template-columns: 1fr;

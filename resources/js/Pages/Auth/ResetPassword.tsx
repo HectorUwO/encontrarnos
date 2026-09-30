@@ -1,6 +1,6 @@
+import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowUpRight } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 export default function ResetPassword({
@@ -92,8 +92,9 @@ export default function ResetPassword({
                     type="submit"
                     className="en-auth-submit"
                     disabled={processing}
+                    aria-busy={processing}
                 >
-                    Guardar contraseña <ArrowUpRight size={19} />
+                    Guardar contraseña <ActionIcon pending={processing} />
                 </button>
             </form>
         </GuestLayout>

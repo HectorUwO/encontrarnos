@@ -1,10 +1,22 @@
 import { RecordBrowser } from '@/Components/Encontrarnos/PublicTools';
 import PublicLayout from '@/Layouts/PublicLayout';
+import { Paginated, PersonRecord, RecordFilters, RecordOptions } from '@/types';
 import { Head } from '@inertiajs/react';
+import { ReactNode } from 'react';
 
-export default function BaseDeDatos() {
+export default function BaseDeDatos({
+    records,
+    totalPublished,
+    filters,
+    options,
+}: {
+    records: Paginated<PersonRecord>;
+    totalPublished: number;
+    filters: RecordFilters;
+    options: RecordOptions;
+}) {
     return (
-        <PublicLayout>
+        <>
             <Head title="Base de datos · Encontrarnos" />
             <section
                 className="en-records en-section"
@@ -29,17 +41,25 @@ export default function BaseDeDatos() {
                             continuar una búsqueda.
                         </p>
                         <div className="en-archive-count">
-                            <strong>50 MIL +</strong>
+                            <strong>
+                                {totalPublished.toLocaleString('es-MX')}
+                            </strong>
                             <span>
-                                registros previstos
+                                fichas públicas
                                 <br />
                                 para consultar
                             </span>
                         </div>
                     </div>
                 </div>
-                <RecordBrowser />
+                <RecordBrowser
+                    records={records}
+                    filters={filters}
+                    options={options}
+                />
             </section>
-        </PublicLayout>
+        </>
     );
 }
+
+BaseDeDatos.layout = (page: ReactNode) => <PublicLayout>{page}</PublicLayout>;

@@ -23,3 +23,25 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Rendimiento. Cada bloque se ignora si su módulo de Apache no está cargado.
+
+# Compresión del texto (HTML, JSON de Inertia, CSS, JS, SVG): viaja entre 70 y 85 % más ligero.
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Lo compilado por Vite lleva la huella del contenido en el nombre: nunca cambia.
+    <If "%{REQUEST_URI} =~ m#^/build/assets/#">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
+
+    # Íconos e imágenes sin huella en el nombre: una semana.
+    <FilesMatch "\.(ico|png|webp|svg)$">
+        Header setifempty Cache-Control "public, max-age=604800"
+    </FilesMatch>
+</IfModule>

@@ -44,6 +44,20 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        // Base del colector RNPDNO (no forma parte de la app): se abre solo
+        // para lectura y sin escribir nada, porque el colector la sigue usando.
+        'rnpdno' => [
+            'driver' => 'sqlite',
+            'database' => env('RNPDNO_DATABASE'),
+            'prefix' => '',
+            'foreign_key_constraints' => false,
+            'busy_timeout' => 5000,
+            'pragmas' => ['query_only' => 1],
+            'options' => defined('PDO::SQLITE_ATTR_OPEN_FLAGS') ? [
+                constant('PDO::SQLITE_ATTR_OPEN_FLAGS') => constant('PDO::SQLITE_OPEN_READONLY'),
+            ] : [],
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

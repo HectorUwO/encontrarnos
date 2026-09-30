@@ -101,6 +101,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Aviso de nuevas cuentas
+    |--------------------------------------------------------------------------
+    |
+    | Dirección que recibe un correo cada vez que alguien se registra.
+    | Déjala vacía para no enviar el aviso.
+    |
+    */
+
+    'admin_notification' => env('ADMIN_NOTIFICATION_EMAIL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Global "From" Address
     |--------------------------------------------------------------------------
     |

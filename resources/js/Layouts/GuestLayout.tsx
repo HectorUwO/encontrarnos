@@ -1,3 +1,4 @@
+import { colorSymbol, darkBackgroundSymbol, lspLogo, utLogo } from '@/brand';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { PropsWithChildren } from 'react';
@@ -12,7 +13,7 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                     className="en-auth-brand"
                     aria-label="Encontrarnos, volver al inicio"
                 >
-                    <img src="/3.png" alt="" />
+                    <img src={darkBackgroundSymbol} alt="" />
                     <span>
                         encontrarnos<span>.</span>
                     </span>
@@ -37,14 +38,19 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                         <br />
                         CON QUIENES BUSCAN.
                     </span>
-                    <div className="en-auth-allies" aria-label="Instituciones aliadas">
+                    <div
+                        className="en-auth-allies"
+                        aria-label="Instituciones aliadas"
+                    >
                         <a
                             href="https://www.facebook.com/LSPUTNay"
                             target="_blank"
                             rel="noreferrer"
                         >
                             <img
-                                src="/LSPlogo-footer.png"
+                                src={lspLogo}
+                                width={192}
+                                height={192}
                                 alt="Licenciatura en Seguridad Pública"
                             />
                         </a>
@@ -54,7 +60,9 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                             rel="noreferrer"
                         >
                             <img
-                                src="/UTlogo.png"
+                                src={utLogo}
+                                width={192}
+                                height={192}
                                 alt="Universidad Tecnológica de Nayarit"
                             />
                         </a>
@@ -64,7 +72,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
             <main className="en-auth-main">
                 <div className="en-auth-mobile-brand">
                     <Link href="/">
-                        <img src="/1.png" alt="" /> encontrarnos<span>.</span>
+                        <img src={colorSymbol} alt="" /> encontrarnos
+                        <span>.</span>
                     </Link>
                 </div>
                 <div className="en-auth-content">

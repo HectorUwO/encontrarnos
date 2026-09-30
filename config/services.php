@@ -35,4 +35,29 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Búsqueda de fichas
+    |--------------------------------------------------------------------------
+    |
+    | «meilisearch» usa el servidor de abajo (rápido y tolera errores de
+    | escritura en los nombres); «database» busca en MySQL. Si Meilisearch no
+    | responde, la búsqueda cae sola a la base de datos.
+    |
+    */
+
+    'records_search' => env('RECORDS_SEARCH', 'database'),
+
+    // Con «database» en MySQL, busca con el índice de texto completo (más rápido
+    // que LIKE). Apágalo si prefieres que las palabras se busquen en cualquier
+    // parte del texto.
+    'records_fulltext' => (bool) env('RECORDS_FULLTEXT', true),
+
+    'meilisearch' => [
+        'host' => env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
+        'key' => env('MEILISEARCH_KEY'),
+        'index' => env('MEILISEARCH_INDEX', 'person_records'),
+        'timeout' => (int) env('MEILISEARCH_TIMEOUT', 2),
+    ],
+
 ];

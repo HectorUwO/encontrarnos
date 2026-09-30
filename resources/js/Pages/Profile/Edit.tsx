@@ -1,43 +1,33 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import WorkspaceLayout from '@/Layouts/WorkspaceLayout';
 import { PageProps } from '@/types';
 import { Head } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
-export default function Edit({
-    mustVerifyEmail,
-    status,
-}: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
+export default function Edit({ status }: PageProps<{ status?: string }>) {
     return (
-        <AuthenticatedLayout
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Profile
-                </h2>
-            }
-        >
-            <Head title="Profile" />
-
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                        <UpdateProfileInformationForm
-                            mustVerifyEmail={mustVerifyEmail}
-                            status={status}
-                            className="max-w-xl"
-                        />
-                    </div>
-
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                        <UpdatePasswordForm className="max-w-xl" />
-                    </div>
-
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                        <DeleteUserForm className="max-w-xl" />
+        <WorkspaceLayout active="profile" crumb="PANEL / MI CUENTA">
+            <Head title="Mi cuenta" />
+            <main className="en-work-content">
+                <div className="en-work-intro">
+                    <div>
+                        <span className="en-work-kicker">
+                            ENCONTRARNOS / MI CUENTA
+                        </span>
+                        <h1>TUS DATOS.</h1>
+                        <p>
+                            Actualiza tu nombre y correo, cambia tu contraseña o
+                            elimina tu cuenta.
+                        </p>
                     </div>
                 </div>
-            </div>
-        </AuthenticatedLayout>
+                <div className="en-profile-grid">
+                    <UpdateProfileInformationForm status={status} />
+                    <UpdatePasswordForm />
+                    <DeleteUserForm />
+                </div>
+            </main>
+        </WorkspaceLayout>
     );
 }
