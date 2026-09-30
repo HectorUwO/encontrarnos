@@ -4,23 +4,19 @@ namespace App\Http\Requests;
 
 use App\Enums\AgeRange;
 use App\Enums\MexicanState;
+use App\Enums\PersonRequestType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class IndexPersonRecordsRequest extends FormRequest
+class IndexPersonRequestsRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -29,6 +25,7 @@ class IndexPersonRecordsRequest extends FormRequest
             'q' => ['nullable', 'string', 'max:120'],
             'state' => ['nullable', Rule::enum(MexicanState::class)],
             'age' => ['nullable', Rule::enum(AgeRange::class)],
+            'type' => ['nullable', Rule::enum(PersonRequestType::class)],
             'page' => ['nullable', 'integer', 'min:1'],
         ];
     }
@@ -48,10 +45,13 @@ class IndexPersonRecordsRequest extends FormRequest
         return $this->enum('age', AgeRange::class);
     }
 
+    public function requestType(): ?PersonRequestType
+    {
+        return $this->enum('type', PersonRequestType::class);
+    }
+
     /**
-     * Filtros activos tal como los necesita la interfaz.
-     *
-     * @return array{q: string|null, state: string|null, age: string|null}
+     * @return array{q: string|null, state: string|null, age: string|null, type: string|null}
      */
     public function filters(): array
     {
@@ -59,6 +59,7 @@ class IndexPersonRecordsRequest extends FormRequest
             'q' => $this->searchTerm(),
             'state' => $this->state()?->value,
             'age' => $this->ageRange()?->value,
+            'type' => $this->requestType()?->value,
         ];
     }
 }

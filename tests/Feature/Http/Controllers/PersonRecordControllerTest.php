@@ -102,23 +102,43 @@ class PersonRecordControllerTest extends TestCase
         ];
     }
 
-    public function test_filters_by_record_type(): void
-    {
-        PersonRecord::factory()->create(['folio' => 'EN-000001']);
-        PersonRecord::factory()->identificationRequest()->create(['folio' => 'EN-000002']);
-
-        $this->get(route('records', ['type' => 'identification_request']))
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('records.data', 1)
-                ->where('records.data.0.folio', 'EN-000002'));
-    }
-
     public function test_rejects_an_unknown_state_filter(): void
     {
         $this->from(route('records'))
             ->get(route('records', ['state' => 'atlantis']))
             ->assertRedirect(route('records'))
             ->assertInvalid('state');
+    }
+
+    public function test_shows_the_ficha_of_a_public_record_without_source_identifiers(): void
+    {
+        PersonRecord::factory()->create([
+            'folio' => 'EN-000321',
+            'name' => 'MARIA LOPEZ',
+            'authority' => 'Fiscalía de Jalisco',
+            'source_victim_id' => 'BE74EF5E-38B4-4D37-84E0-E49B45504C10',
+            'source_report_id' => 7,
+            'source_agency_id' => 44,
+        ]);
+
+        $response = $this->get(route('records.show', 'EN-000321'));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Public/FichaDesaparecido')
+            ->where('record.data.folio', 'EN-000321')
+            ->where('record.data.name', 'MARIA LOPEZ')
+            ->where('record.data.url', '/base-de-datos/EN-000321')
+            ->where('record.data.authority', 'Fiscalía de Jalisco')
+            ->missing('record.data.source_victim_id'));
+        $this->assertStringNotContainsString('BE74EF5E', $response->getContent());
+    }
+
+    public function test_an_unpublished_or_unknown_ficha_is_not_found(): void
+    {
+        PersonRecord::factory()->unpublished()->create(['folio' => 'EN-000999']);
+
+        $this->get(route('records.show', 'EN-000999'))->assertNotFound();
+        $this->get(route('records.show', 'EN-404404'))->assertNotFound();
     }
 
     public function test_exposes_only_the_public_fields_of_a_record(): void
@@ -132,9 +152,9 @@ class PersonRecordControllerTest extends TestCase
         $this->get(route('records'))
             ->assertInertia(fn (Assert $page) => $page->has('records.data.0', fn (Assert $record) => $record
                 ->hasAll([
-                    'folio', 'name', 'type', 'type_label', 'status_label', 'sex', 'age', 'current_age', 'state',
+                    'folio', 'name', 'type', 'type_label', 'status_label', 'sex', 'sex_label', 'age', 'current_age', 'state',
                     'state_label', 'municipality', 'event_date', 'event_date_label', 'description', 'traits',
-                    'clothing', 'distinguishing_marks', 'authority', 'has_photo', 'portrait', 'portrait_large',
+                    'clothing', 'distinguishing_marks', 'authority', 'has_photo', 'published_at_label', 'updated_at_label', 'url', 'portrait', 'portrait_large',
                 ])
                 ->missingAll(['id', 'source_victim_id', 'source_report_id', 'source_agency_id', 'photo_path', 'photo_sha256', 'published_at'])));
     }
@@ -225,6 +245,6 @@ class PersonRecordControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->has('options.states', 32)
                 ->has('options.ageRanges', 4)
-                ->has('options.types', 2));
+                ->missing('options.types'));
     }
 }

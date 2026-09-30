@@ -1,180 +1,99 @@
 import { classNames } from '@/classNames';
 import { sentenceCase, titleCase } from '@/format';
-import { Paginated, PersonRecord, RecordFilters, RecordOptions } from '@/types';
-import { Link, router, usePage } from '@inertiajs/react';
+import {
+    Paginated,
+    PersonRequestItem,
+    RequestFilters,
+    RequestOptions,
+} from '@/types';
+import { Link, router } from '@inertiajs/react';
 import {
     ArrowUpRight,
-    ChartNoAxesColumnIncreasing,
     ChevronLeft,
     ChevronRight,
-    ImagePlus,
     LoaderCircle,
     Search,
     SlidersHorizontal,
-    UsersRound,
+    UserRound,
     X,
 } from 'lucide-react';
 import { CSSProperties, useEffect, useRef, useState } from 'react';
-import { Chip } from './Ficha';
-import { FadeImage, Reveal, useVisitPending } from './motion';
-import './public-tools.css';
-
-const actions = [
-    {
-        href: '/base-de-datos',
-        title: 'Buscar en base de datos',
-        short: 'Base de datos',
-        description: 'Consulta nombres, lugares y descripciones.',
-        icon: Search,
-    },
-    {
-        href: '/estadisticas',
-        title: 'Estadísticas',
-        short: 'Estadísticas',
-        description: 'Mapa, histórico y perfil por entidad.',
-        icon: ChartNoAxesColumnIncreasing,
-    },
-    {
-        href: '/busqueda-por-fotografia',
-        title: 'Búsqueda por fotografía',
-        short: 'Fotografía',
-        description: 'Busca a partir de una imagen.',
-        icon: ImagePlus,
-    },
-    {
-        href: '/solicitudes',
-        title: 'Ver o crear solicitudes',
-        short: 'Solicitudes',
-        description: 'Consulta solicitudes o prepara una nueva.',
-        icon: UsersRound,
-    },
-];
-
-export function ActionGrid() {
-    return (
-        <Reveal
-            stagger
-            className="en-action-grid"
-            aria-label="Acciones principales"
-        >
-            {actions.map(({ href, title, description, icon: Icon }, index) => (
-                <Link
-                    key={href}
-                    href={href}
-                    prefetch
-                    style={{ '--i': index } as CSSProperties}
-                    className={classNames(
-                        'en-action-card',
-                        index === 0 && 'en-action-primary',
-                    )}
-                >
-                    <Icon size={23} aria-hidden="true" />
-                    <span>
-                        <strong>{title}</strong>
-                        <small>{description}</small>
-                    </span>
-                    <ArrowUpRight size={19} aria-hidden="true" />
-                </Link>
-            ))}
-        </Reveal>
-    );
-}
-
-export function MobileNavigation() {
-    const { url } = usePage();
-    return (
-        <nav className="en-mobile-dock" aria-label="Accesos rápidos">
-            {actions.map(({ href, short, icon: Icon }) => (
-                <Link
-                    href={href}
-                    key={href}
-                    aria-current={url.startsWith(href) ? 'page' : undefined}
-                >
-                    <Icon size={23} aria-hidden="true" />
-                    <span>{short}</span>
-                </Link>
-            ))}
-        </nav>
-    );
-}
-
-export { actions };
+import { FadeImage, useVisitPending } from './motion';
+import './requests.css';
 
 const SEARCH_DELAY = 350;
 
-const ageLabel = (age: number | null) =>
-    age === null ? 'Sin dato' : `${age} años`;
+const dateTitle = (request: PersonRequestItem) =>
+    request.type === 'search' ? 'Desaparición' : 'Localización';
 
-const placeLabel = (record: PersonRecord) =>
-    [titleCase(record.municipality), record.state_label]
-        .filter(Boolean)
-        .join(', ') || 'Sin dato';
-
-const dateTitle = (record: PersonRecord, long = false) =>
-    record.type === 'missing_person'
-        ? long
-            ? 'Fecha de desaparición'
-            : 'Desaparición'
-        : long
-          ? 'Fecha de registro'
-          : 'Registro';
-
-function Portrait({
-    record,
-    large = false,
-}: {
-    record: PersonRecord;
-    large?: boolean;
-}) {
+export function RequestChip({ type }: { type: PersonRequestItem['type'] }) {
     return (
-        <FadeImage
-            src={large ? record.portrait_large : record.portrait}
-            alt={
-                record.has_photo
-                    ? `Fotografía de la ficha ${record.folio}`
-                    : 'Silueta de una persona'
-            }
-            className={record.has_photo ? 'en-photo' : undefined}
-            loading="lazy"
-            decoding="async"
-        />
+        <span className={classNames('req-chip', `req-chip--${type}`)}>
+            {type === 'search' ? 'Búsqueda' : 'Identificación'}
+        </span>
     );
 }
 
-export function RecordBrowser({
-    records,
+export function RequestPortrait({
+    request,
+    large = false,
+}: {
+    request: PersonRequestItem;
+    large?: boolean;
+}) {
+    const src = large ? request.photo : request.photo_thumb;
+
+    return src ? (
+        <FadeImage
+            src={src}
+            alt={`Fotografía de la solicitud ${request.reference}`}
+            className="en-photo"
+            loading="lazy"
+            decoding="async"
+        />
+    ) : (
+        <span className="req-noimage" role="img" aria-label="Sin fotografía">
+            <UserRound size={44} strokeWidth={1.5} />
+        </span>
+    );
+}
+
+export function RequestBrowser({
+    requests,
     filters,
     options,
 }: {
-    records: Paginated<PersonRecord>;
-    filters: RecordFilters;
-    options: RecordOptions;
+    requests: Paginated<PersonRequestItem>;
+    filters: RequestFilters;
+    options: RequestOptions;
 }) {
     const [query, setQuery] = useState(filters.q ?? '');
     const [filtersOpen, setFiltersOpen] = useState(
-        Boolean(filters.state || filters.age),
+        Boolean(filters.state || filters.age || filters.type),
     );
     const pending = useVisitPending();
-    const activeFilters = [filters.state, filters.age].filter(Boolean).length;
+    const activeFilters = [filters.state, filters.age, filters.type].filter(
+        Boolean,
+    ).length;
     const latestFilters = useRef(filters);
     latestFilters.current = filters;
 
-    const visit = (changes: Partial<RecordFilters>, page = 1) => {
+    const visit = (changes: Partial<RequestFilters>, page = 1) => {
         const next = { ...latestFilters.current, ...changes };
         const parameters = Object.fromEntries(
             Object.entries({ ...next, page: page > 1 ? page : null }).filter(
                 ([, value]) => value,
             ),
         );
-        router.get(route('records'), parameters, {
+        router.get(route('requests'), parameters, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
-            only: ['records', 'filters'],
+            only: ['requests', 'filters'],
             onSuccess: () => {
                 if (page > 1) {
                     document
-                        .getElementById('registros')
+                        .getElementById('catalogo')
                         ?.scrollIntoView({ behavior: 'smooth' });
                 }
             },
@@ -194,20 +113,20 @@ export function RecordBrowser({
 
     const reset = () => {
         setQuery('');
-        visit({ q: null, state: null, age: null });
+        visit({ q: null, state: null, age: null, type: null });
     };
-    const { current_page: currentPage, last_page: lastPage } = records.meta;
+    const { current_page: currentPage, last_page: lastPage } = requests.meta;
 
     return (
-        <div className="en-database">
+        <div className="en-database" id="catalogo">
             <div className="en-database-toolbar">
                 <label className="en-database-search">
                     <Search size={22} aria-hidden="true" />
                     <input
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Nombre, lugar o descripción"
-                        aria-label="Buscar en la base de datos"
+                        placeholder="Nombre, lugar, descripción o referencia"
+                        aria-label="Buscar solicitudes"
                     />
                     {query && (
                         <button
@@ -223,7 +142,7 @@ export function RecordBrowser({
                     className="en-filter-toggle"
                     type="button"
                     aria-expanded={filtersOpen}
-                    aria-controls="database-filters"
+                    aria-controls="request-filters"
                     onClick={() => setFiltersOpen(!filtersOpen)}
                 >
                     <SlidersHorizontal size={20} /> Filtros{' '}
@@ -232,10 +151,26 @@ export function RecordBrowser({
             </div>
             <div
                 className={classNames('en-collapse', filtersOpen && 'is-open')}
-                id="database-filters"
+                id="request-filters"
             >
                 <div className="en-collapse-inner">
                     <div className="en-database-filters">
+                        <label>
+                            Tipo de solicitud
+                            <select
+                                value={filters.type ?? ''}
+                                onChange={(event) =>
+                                    visit({ type: event.target.value || null })
+                                }
+                            >
+                                <option value="">Todas las solicitudes</option>
+                                {options.types.map((item) => (
+                                    <option key={item.value} value={item.value}>
+                                        {item.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
                         <label>
                             Estado
                             <select
@@ -280,8 +215,8 @@ export function RecordBrowser({
             </div>
             <div className="en-database-summary">
                 <span role="status" aria-live="polite">
-                    {records.meta.total.toLocaleString('es-MX')}{' '}
-                    {records.meta.total === 1 ? 'resultado' : 'resultados'}
+                    {requests.meta.total.toLocaleString('es-MX')}{' '}
+                    {requests.meta.total === 1 ? 'solicitud' : 'solicitudes'}
                     {activeFilters > 0 &&
                         ` · ${activeFilters} ${activeFilters === 1 ? 'filtro activo' : 'filtros activos'}`}
                 </span>
@@ -298,53 +233,53 @@ export function RecordBrowser({
                 )}
                 aria-busy={pending}
             >
-                {records.data.map((record, index) => (
+                {requests.data.map((request, index) => (
                     <article
                         className="en-person-card"
                         style={{ '--i': index } as CSSProperties}
-                        key={record.folio}
+                        key={request.id}
                     >
                         <div className="en-person-portrait">
-                            <Portrait record={record} />
+                            <RequestPortrait request={request} />
                         </div>
                         <div className="en-person-info">
                             <div className="req-cardhead">
-                                <Chip
-                                    tone={
-                                        record.status_label === 'No localizada'
-                                            ? 'not_located'
-                                            : 'missing'
-                                    }
-                                >
-                                    {record.status_label ?? record.type_label}
-                                </Chip>
-                                <span className="req-ref">{record.folio}</span>
+                                <RequestChip type={request.type} />
+                                <span className="req-ref">
+                                    {request.reference}
+                                </span>
                             </div>
-                            <h3>{titleCase(record.name)}</h3>
+                            <h3>
+                                {titleCase(request.name) ||
+                                    'Persona sin identificar'}
+                            </h3>
                             <dl>
                                 <div>
                                     <dt>Edad</dt>
-                                    <dd>{ageLabel(record.age)}</dd>
+                                    <dd>
+                                        {request.age === null
+                                            ? 'Sin dato'
+                                            : `${request.age} años`}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt>Lugar</dt>
-                                    <dd>{placeLabel(record)}</dd>
+                                    <dd>
+                                        {titleCase(request.place) || 'Sin dato'}
+                                    </dd>
                                 </div>
                                 <div>
-                                    <dt>{dateTitle(record)}</dt>
+                                    <dt>{dateTitle(request)}</dt>
                                     <dd>
-                                        {record.event_date_label ?? 'Sin fecha'}
+                                        {request.event_date_label ??
+                                            'Sin fecha'}
                                     </dd>
                                 </div>
                             </dl>
-                            <p>
-                                {record.description
-                                    ? sentenceCase(record.description)
-                                    : 'Aún no hay una descripción física registrada.'}
-                            </p>
+                            <p>{sentenceCase(request.description)}</p>
                         </div>
                         <Link
-                            href={record.url}
+                            href={request.url}
                             className="en-person-open"
                             prefetch
                         >
@@ -352,11 +287,14 @@ export function RecordBrowser({
                         </Link>
                     </article>
                 ))}
-                {!records.data.length && (
+                {!requests.data.length && (
                     <div className="en-database-empty">
                         <Search size={30} />
-                        <h3>No hay resultados con estos filtros</h3>
-                        <p>Prueba otro nombre, lugar o rango de edad.</p>
+                        <h3>No hay solicitudes con estos filtros</h3>
+                        <p>
+                            Prueba otro nombre o lugar, o crea una solicitud
+                            nueva.
+                        </p>
                         <button className="en-primary-button" onClick={reset}>
                             Limpiar búsqueda
                         </button>
@@ -366,7 +304,7 @@ export function RecordBrowser({
             {lastPage > 1 && (
                 <nav
                     className="en-pagination"
-                    aria-label="Paginación de resultados"
+                    aria-label="Paginación de solicitudes"
                 >
                     <button
                         type="button"

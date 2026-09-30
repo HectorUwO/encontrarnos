@@ -33,6 +33,7 @@ class PersonRecordResource extends JsonResource
             'type_label' => $this->type->label(),
             'status_label' => $this->disappearance_status?->label(),
             'sex' => $this->sex?->value,
+            'sex_label' => $this->sex?->label(),
             'age' => $this->age,
             'current_age' => $this->current_age,
             'state' => $this->state?->value,
@@ -52,6 +53,9 @@ class PersonRecordResource extends JsonResource
             'distinguishing_marks' => $this->sentenceCase($this->distinguishing_marks),
             'authority' => $this->authority,
             'has_photo' => $this->hasPhoto(),
+            'published_at_label' => $this->published_at?->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'updated_at_label' => $this->updated_at?->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'url' => route('records.show', $this->resource, absolute: false),
             'portrait' => $this->portraitUrl(PhotoSize::Thumbnail),
             'portrait_large' => $this->portraitUrl(PhotoSize::Medium),
         ];

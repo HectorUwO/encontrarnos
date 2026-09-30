@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Enums\MexicanState;
 use App\Enums\PersonRequestStatus;
 use App\Enums\PersonRequestType;
+use App\Enums\Sex;
 use App\Models\PersonRequest;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,7 +25,12 @@ class PersonRequestFactory extends Factory
             'type' => fake()->randomElement(PersonRequestType::cases()),
             'status' => PersonRequestStatus::Pending,
             'name' => fake('es_ES')->name(),
-            'place' => fake('es_ES')->city().', '.fake('es_ES')->state(),
+            'sex' => fake()->randomElement(Sex::cases()),
+            'age' => fake()->numberBetween(1, 80),
+            'state' => MexicanState::Nayarit,
+            'municipality' => 'Tepic',
+            'place' => 'Tepic, Nayarit',
+            'event_date' => fake()->dateTimeBetween('-2 years', '-1 day')->format('Y-m-d'),
             'description' => fake('es_ES')->paragraph(),
             'contact_email' => fake()->unique()->safeEmail(),
         ];

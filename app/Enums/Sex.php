@@ -2,10 +2,13 @@
 
 namespace App\Enums;
 
+use App\Enums\Concerns\HasOptions;
 use Illuminate\Support\Str;
 
 enum Sex: string
 {
+    use HasOptions;
+
     case Female = 'female';
     case Male = 'male';
     case Unknown = 'unknown';

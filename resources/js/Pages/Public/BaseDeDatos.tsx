@@ -1,8 +1,25 @@
 import { RecordBrowser } from '@/Components/Encontrarnos/PublicTools';
+import '@/Components/Encontrarnos/requests.css';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { Paginated, PersonRecord, RecordFilters, RecordOptions } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowUpRight } from 'lucide-react';
 import { ReactNode } from 'react';
+
+const steps = [
+    [
+        'Busca',
+        'Por nombre, lugar o descripción, con filtros por estado y edad.',
+    ],
+    [
+        'Abre la ficha',
+        'Revisa la fotografía, los rasgos y las señas particulares.',
+    ],
+    [
+        'Comparte información',
+        'Si reconoces algún dato, escríbenos desde la ficha.',
+    ],
+];
 
 export default function BaseDeDatos({
     records,
@@ -19,28 +36,26 @@ export default function BaseDeDatos({
         <>
             <Head title="Base de datos · Encontrarnos" />
             <section
-                className="en-records en-section"
-                id="registros"
+                className="req-hero req-hero--ink"
                 aria-labelledby="database-title"
             >
-                <div className="en-section-heading">
+                <div className="req-hero-inner">
                     <div>
-                        <p className="en-section-kicker">
-                            <span>01</span> / BASE DE DATOS
+                        <p className="req-kicker">
+                            <span>01</span> BASE DE DATOS
                         </p>
-                        <h2 id="database-title">
-                            CADA FICHA,
-                            <br />
-                            <em>UNA PERSONA.</em>
-                        </h2>
+                        <h1 id="database-title">
+                            Cada ficha,
+                            <em>una persona.</em>
+                        </h1>
+                        <p className="req-lead">
+                            Personas desaparecidas y no localizadas del registro
+                            nacional. Revisa las fotografías y los datos que
+                            pueden ayudar a continuar una búsqueda.
+                        </p>
                     </div>
-                    <div className="en-section-aside">
-                        <p>
-                            Busca por nombre, lugar o descripción. Revisa las
-                            fotografías y los datos que pueden ayudar a
-                            continuar una búsqueda.
-                        </p>
-                        <div className="en-archive-count">
+                    <aside className="req-hero-panel">
+                        <div className="req-count">
                             <strong>
                                 {totalPublished.toLocaleString('es-MX')}
                             </strong>
@@ -50,8 +65,31 @@ export default function BaseDeDatos({
                                 para consultar
                             </span>
                         </div>
-                    </div>
+                        <div className="req-cta">
+                            <Link href={route('photo-search')}>
+                                Buscar con una fotografía{' '}
+                                <ArrowUpRight size={20} />
+                            </Link>
+                            <Link href={route('requests')}>
+                                Ver solicitudes de búsqueda{' '}
+                                <ArrowUpRight size={20} />
+                            </Link>
+                        </div>
+                    </aside>
                 </div>
+                <ol className="req-steps" aria-label="Cómo usarla">
+                    {steps.map(([title, text], index) => (
+                        <li key={title}>
+                            <b>0{index + 1}</b>
+                            <span>
+                                <strong>{title}</strong>
+                                {text}
+                            </span>
+                        </li>
+                    ))}
+                </ol>
+            </section>
+            <section className="req-body" id="registros">
                 <RecordBrowser
                     records={records}
                     filters={filters}

@@ -119,7 +119,7 @@ class PersonRecordTest extends TestCase
     {
         PersonRecord::factory()->count(2)->create();
 
-        $this->assertSame(2, PersonRecord::query()->inState(null)->inAgeRange(null)->ofType(null)->count());
+        $this->assertSame(2, PersonRecord::query()->inState(null)->inAgeRange(null)->count());
     }
 
     public function test_latest_events_orders_by_date_and_puts_undated_records_last(): void

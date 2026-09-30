@@ -4,8 +4,10 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowUpRight,
     ChartNoAxesColumnIncreasing,
+    ClipboardCheck,
     FileText,
     Fingerprint,
+    Inbox,
     LayoutDashboard,
     LogOut,
     Mail,
@@ -23,7 +25,14 @@ type Props = PropsWithChildren<{
     /** Texto del encabezado superior, p. ej. "PANEL / VISTA GENERAL". */
     crumb: string;
     /** Sección activa del menú lateral. */
-    active: 'overview' | 'profile' | 'admin' | 'admin-users' | 'admin-mail';
+    active:
+        | 'overview'
+        | 'profile'
+        | 'admin'
+        | 'admin-users'
+        | 'admin-requests'
+        | 'admin-information'
+        | 'admin-mail';
     /** Elemento opcional a la derecha del encabezado superior. */
     tag?: ReactNode;
 }>;
@@ -60,7 +69,7 @@ export default function WorkspaceLayout({
                         }
                         onClick={closeMenu}
                     >
-                        <LayoutDashboard size={18} /> Vista general
+                        <LayoutDashboard size={18} /> Mi espacio
                     </Link>
                     <Link href={route('records')}>
                         <FileText size={18} /> Base de datos
@@ -116,6 +125,28 @@ export default function WorkspaceLayout({
                                 onClick={closeMenu}
                             >
                                 <Users size={18} /> Usuarios
+                            </Link>
+                            <Link
+                                href={route('admin.requests')}
+                                className={
+                                    active === 'admin-requests'
+                                        ? 'en-work-nav-active'
+                                        : undefined
+                                }
+                                onClick={closeMenu}
+                            >
+                                <ClipboardCheck size={18} /> Solicitudes
+                            </Link>
+                            <Link
+                                href={route('admin.information')}
+                                className={
+                                    active === 'admin-information'
+                                        ? 'en-work-nav-active'
+                                        : undefined
+                                }
+                                onClick={closeMenu}
+                            >
+                                <Inbox size={18} /> Información
                             </Link>
                             <Link
                                 href={route('admin.mail')}

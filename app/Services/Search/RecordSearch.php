@@ -4,7 +4,6 @@ namespace App\Services\Search;
 
 use App\Enums\AgeRange;
 use App\Enums\MexicanState;
-use App\Enums\RecordType;
 use App\Models\PersonRecord;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -19,13 +18,13 @@ class RecordSearch
 {
     public function __construct(private readonly MeilisearchClient $meilisearch) {}
 
-    public function paginate(?string $term, ?MexicanState $state, ?AgeRange $range, ?RecordType $type, int $perPage): LengthAwarePaginator
+    public function paginate(?string $term, ?MexicanState $state, ?AgeRange $range, int $perPage): LengthAwarePaginator
     {
         $term = trim((string) $term);
 
         if ($term !== '' && $this->meilisearch->enabled()) {
             try {
-                return $this->fromMeilisearch($term, $state, $range, $type, $perPage);
+                return $this->fromMeilisearch($term, $state, $range, $perPage);
             } catch (Throwable $exception) {
                 $this->meilisearch->markDown();
 
@@ -38,12 +37,11 @@ class RecordSearch
             ->search($term)
             ->inState($state)
             ->inAgeRange($range)
-            ->ofType($type)
             ->latestEvents()
             ->paginate($perPage);
     }
 
-    private function fromMeilisearch(string $term, ?MexicanState $state, ?AgeRange $range, ?RecordType $type, int $perPage): LengthAwarePaginator
+    private function fromMeilisearch(string $term, ?MexicanState $state, ?AgeRange $range, int $perPage): LengthAwarePaginator
     {
         $page = Paginator::resolveCurrentPage();
 
@@ -51,7 +49,7 @@ class RecordSearch
             'q' => $term,
             // Como en la base de datos, deben aparecer todas las palabras.
             'matchingStrategy' => 'all',
-            'filter' => $this->filters($state, $range, $type),
+            'filter' => $this->filters($state, $range),
             'page' => $page,
             'hitsPerPage' => $perPage,
             'attributesToRetrieve' => ['id'],
@@ -78,16 +76,12 @@ class RecordSearch
     /**
      * @return list<string>
      */
-    private function filters(?MexicanState $state, ?AgeRange $range, ?RecordType $type): array
+    private function filters(?MexicanState $state, ?AgeRange $range): array
     {
         $filters = [];
 
         if ($state !== null) {
             $filters[] = "state = '{$state->value}'";
-        }
-
-        if ($type !== null) {
-            $filters[] = "type = '{$type->value}'";
         }
 
         if ($range !== null) {

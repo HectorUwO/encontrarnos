@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\AgeRange;
 use App\Enums\MexicanState;
-use App\Enums\RecordType;
 use App\Http\Requests\IndexPersonRecordsRequest;
 use App\Http\Resources\PersonRecordResource;
 use App\Models\PersonRecord;
@@ -17,6 +16,18 @@ class PersonRecordController extends Controller
     private const PER_PAGE = 12;
 
     /**
+     * Ficha de una persona desaparecida. Solo las fichas públicas se muestran.
+     */
+    public function show(PersonRecord $personRecord): Response
+    {
+        abort_unless($personRecord->published_at !== null, 404);
+
+        return Inertia::render('Public/FichaDesaparecido', [
+            'record' => PersonRecordResource::make($personRecord),
+        ]);
+    }
+
+    /**
      * Base de datos pública de fichas, con búsqueda y filtros.
      */
     public function index(IndexPersonRecordsRequest $request, RecordSearch $search): Response
@@ -26,7 +37,6 @@ class PersonRecordController extends Controller
                 $request->searchTerm(),
                 $request->state(),
                 $request->ageRange(),
-                $request->recordType(),
                 self::PER_PAGE,
             )
             ->withQueryString();
@@ -38,7 +48,6 @@ class PersonRecordController extends Controller
             'options' => [
                 'states' => MexicanState::options(),
                 'ageRanges' => AgeRange::options(),
-                'types' => RecordType::options(),
             ],
         ]);
     }

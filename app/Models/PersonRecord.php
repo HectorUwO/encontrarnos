@@ -76,6 +76,16 @@ class PersonRecord extends Model
      */
     private const FULLTEXT_COLUMNS = ['name', 'municipality', 'description', 'state'];
 
+    /**
+     * Claves de los rasgos de la media filiación, en su orden de lectura.
+     *
+     * @return list<string>
+     */
+    public static function traitKeys(): array
+    {
+        return array_keys(self::TRAIT_LABELS);
+    }
+
     public static function traitLabel(string $key): string
     {
         return self::TRAIT_LABELS[$key] ?? Str::of($key)->replace('_', ' ')->ucfirst()->toString();
@@ -264,14 +274,6 @@ class PersonRecord extends Model
 
         if ($maximum !== null) {
             $query->where('age', '<=', $maximum);
-        }
-    }
-
-    #[Scope]
-    protected function ofType(Builder $query, ?RecordType $type): void
-    {
-        if ($type !== null) {
-            $query->where('type', $type);
         }
     }
 

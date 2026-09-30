@@ -23,10 +23,12 @@ export interface Option {
 export interface PersonRecord {
     folio: string;
     name: string;
-    type: 'missing_person' | 'identification_request';
+    type: 'missing_person';
     type_label: string;
     status_label: string | null;
     sex: 'female' | 'male' | 'unknown' | null;
+    sex_label: string | null;
+    url: string;
     age: number | null;
     current_age: number | null;
     state: string | null;
@@ -40,6 +42,8 @@ export interface PersonRecord {
     distinguishing_marks: string | null;
     authority: string | null;
     has_photo: boolean;
+    published_at_label: string | null;
+    updated_at_label: string | null;
     portrait: string;
     portrait_large: string;
 }
@@ -66,12 +70,18 @@ export interface RecordFilters {
     q: string | null;
     state: string | null;
     age: string | null;
-    type: string | null;
 }
 
 export interface RecordOptions {
     states: Option[];
     ageRanges: Option[];
+}
+
+export interface RequestFilters extends RecordFilters {
+    type: string | null;
+}
+
+export interface RequestOptions extends RecordOptions {
     types: Option[];
 }
 
@@ -171,9 +181,25 @@ export interface PersonRequestItem {
     status: 'pending' | 'approved' | 'rejected';
     status_label: string;
     name: string | null;
+    sex: 'female' | 'male' | 'unknown' | null;
+    sex_label: string | null;
+    age: number | null;
+    state: string | null;
+    state_label: string | null;
+    municipality: string | null;
     place: string | null;
+    event_date_label: string | null;
     description: string;
+    traits: { label: string; value: string }[];
+    clothing: string | null;
+    distinguishing_marks: string | null;
+    institution: string | null;
+    closed: boolean;
+    closed_reason: 'resolved' | 'withdrawn' | null;
+    closed_at_label: string | null;
+    has_photo: boolean;
     photo: string | null;
     photo_thumb: string | null;
+    url: string;
     created_at_label: string;
 }

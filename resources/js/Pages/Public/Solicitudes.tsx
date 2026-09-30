@@ -1,188 +1,115 @@
-import { FadeImage, Reveal } from '@/Components/Encontrarnos/motion';
-import { RequestComposer } from '@/Components/Encontrarnos/PublicTools';
+import { RequestBrowser } from '@/Components/Encontrarnos/RequestCatalog';
+import '@/Components/Encontrarnos/requests.css';
 import PublicLayout from '@/Layouts/PublicLayout';
-import { PersonRequestItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowUpRight, Plus, UserRound } from 'lucide-react';
-import { ReactNode, useState } from 'react';
+import {
+    PageProps,
+    Paginated,
+    PersonRequestItem,
+    RequestFilters,
+    RequestOptions,
+} from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowUpRight, Check } from 'lucide-react';
+import { ReactNode } from 'react';
 
-function RequestCard({
-    request,
-    index,
-}: {
-    request: PersonRequestItem;
-    index: number;
-}) {
-    return (
-        <Reveal as="article" index={index} className="en-request-card">
-            <div className="en-notice-top">
-                <span>{request.reference}</span>
-                <span>
-                    {request.type === 'identification'
-                        ? 'IDENTIFICACIÓN'
-                        : 'BÚSQUEDA'}
-                </span>
-            </div>
-            <div className="en-request-card-body">
-                {request.photo_thumb ? (
-                    <div className="en-request-card-photo is-photo">
-                        <FadeImage
-                            src={request.photo_thumb}
-                            alt={`Fotografía de la solicitud ${request.reference}`}
-                            loading="lazy"
-                            decoding="async"
-                        />
-                    </div>
-                ) : (
-                    <div
-                        className="en-request-card-photo"
-                        role="img"
-                        aria-label="Sin fotografía"
-                    >
-                        <UserRound size={44} strokeWidth={1.5} />
-                    </div>
-                )}
-                <div>
-                    <h3>{request.name ?? 'Persona sin nombre'}</h3>
-                    <p className="en-request-card-meta">
-                        {[request.place, request.created_at_label]
-                            .filter(Boolean)
-                            .join(' · ')}
-                    </p>
-                    <p className="en-request-card-text">
-                        {request.description}
-                    </p>
-                </div>
-            </div>
-        </Reveal>
-    );
-}
+const steps = [
+    ['Publica', 'Cuéntanos a quién buscas o a quién quieres identificar.'],
+    ['Revisamos', 'Un equipo revisa cada solicitud antes de hacerla pública.'],
+    ['Alguien responde', 'Quien tenga información te escribe a tu correo.'],
+];
 
 export default function Solicitudes({
     requests,
+    totalPublished,
+    filters,
+    options,
 }: {
-    requests: { data: PersonRequestItem[] };
+    requests: Paginated<PersonRequestItem>;
+    totalPublished: number;
+    filters: RequestFilters;
+    options: RequestOptions;
 }) {
-    const [requestOpen, setRequestOpen] = useState(false);
-    const published = requests.data;
+    const { flash } = usePage<PageProps>().props;
 
     return (
         <>
             <Head title="Solicitudes · Encontrarnos" />
-            <section
-                className="en-requests en-section"
-                id="solicitudes"
-                aria-labelledby="requests-title"
-            >
-                <div className="en-section-heading">
+            <section className="req-hero" aria-labelledby="requests-title">
+                <div className="req-hero-inner">
                     <div>
-                        <p className="en-section-kicker">
-                            <span>04</span> / SOLICITUDES
+                        <p className="req-kicker">
+                            <span>04</span> SOLICITUDES
                         </p>
-                        <h2 id="requests-title">
-                            LO QUE SABES
-                            <br />
-                            <em>PUEDE AYUDAR.</em>
-                        </h2>
-                    </div>
-                    <div className="en-section-aside">
-                        <p>
-                            Consulta solicitudes de búsqueda e identificación.
-                            Si necesitas compartir información, prepara una
-                            nueva solicitud.
+                        <h1 id="requests-title">
+                            Lo que sabes
+                            <em>puede ayudar.</em>
+                        </h1>
+                        <p className="req-lead">
+                            Publica una solicitud de búsqueda o de
+                            identificación, o consulta las que otras personas e
+                            instituciones ya compartieron. Están separadas de la
+                            base de datos de personas desaparecidas.
                         </p>
-                        <button
-                            type="button"
-                            className="en-primary-button"
-                            onClick={() => setRequestOpen(true)}
-                        >
-                            Crear solicitud <Plus size={22} />
-                        </button>
                     </div>
-                </div>
-                {published.length > 0 && (
-                    <div
-                        className="en-request-board"
-                        id="lista-solicitudes"
-                        aria-label="Solicitudes publicadas"
-                    >
-                        {published.map((request, index) => (
-                            <RequestCard
-                                key={request.id}
-                                request={request}
-                                index={index}
-                            />
-                        ))}
-                    </div>
-                )}
-                <div className="en-request-showcase">
-                    <div className="en-request-art">
-                        <div className="en-notice-top">
-                            <span>TABLÓN / AVISO</span>
-                            <Plus size={22} />
+                    <aside className="req-hero-panel">
+                        <div className="req-count">
+                            <strong>
+                                {totalPublished.toLocaleString('es-MX')}
+                            </strong>
+                            <span>
+                                solicitudes
+                                <br />
+                                publicadas
+                            </span>
                         </div>
-                        <h3>
-                            SE BUSCA
-                            <br />
-                            INFORMACIÓN.
-                        </h3>
-                        <div className="en-request-portrait-stage">
-                            <div className="en-request-art-orbit" />
-                            <div className="en-request-avatar">
-                                <img
-                                    src="/placeholder-man.webp"
-                                    alt="Silueta de una persona"
-                                />
-                            </div>
+                        <div className="req-cta">
+                            <Link
+                                href={route('requests.create', {
+                                    tipo: 'search',
+                                })}
+                            >
+                                Busco a una persona <ArrowUpRight size={20} />
+                            </Link>
+                            <Link
+                                href={route('requests.create', {
+                                    tipo: 'identification',
+                                })}
+                            >
+                                Quiero identificar a alguien{' '}
+                                <ArrowUpRight size={20} />
+                            </Link>
                         </div>
-                        <span className="en-request-art-label">
-                            SOLICITUD DE IDENTIFICACIÓN
-                        </span>
-                    </div>
-                    <div className="en-request-detail">
-                        <span className="en-section-kicker">
-                            TABLÓN DE SOLICITUDES
-                        </span>
-                        <h3>¿Reconoces algún dato?</h3>
-                        <p>
-                            Una descripción, una seña particular o un lugar
-                            pueden servir para continuar una búsqueda.
-                        </p>
-                        <dl className="en-request-fields">
-                            <div>
-                                <dt>Información disponible</dt>
-                                <dd>
-                                    Fotografía, descripción y señas
-                                    particulares.
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>Cómo aportar información</dt>
-                                <dd>
-                                    A través del contacto indicado en cada
-                                    solicitud.
-                                </dd>
-                            </div>
-                        </dl>
-                        {published.length === 0 && (
-                            <p className="en-request-bottom">
-                                Todavía no hay solicitudes publicadas. Las que
-                                se envían se revisan antes de aparecer aquí.
-                            </p>
-                        )}
-                        <Link
-                            href="/base-de-datos"
-                            className="en-secondary-button"
-                        >
-                            Consultar las fichas <ArrowUpRight size={20} />
-                        </Link>
-                    </div>
+                    </aside>
                 </div>
+                <ol className="req-steps" aria-label="Cómo funciona">
+                    {steps.map(([title, text], index) => (
+                        <li key={title}>
+                            <b>0{index + 1}</b>
+                            <span>
+                                <strong>{title}</strong>
+                                {text}
+                            </span>
+                        </li>
+                    ))}
+                </ol>
             </section>
-            <RequestComposer
-                open={requestOpen}
-                onClose={() => setRequestOpen(false)}
-            />
+            <section className="req-body" id="catalogo-solicitudes">
+                {flash?.status === 'request-received' && (
+                    <p className="req-notice" role="status">
+                        <Check size={20} />
+                        <span>
+                            <strong>Recibimos tu solicitud.</strong> La
+                            revisamos antes de publicarla y te avisaremos por
+                            correo.
+                        </span>
+                    </p>
+                )}
+                <RequestBrowser
+                    requests={requests}
+                    filters={filters}
+                    options={options}
+                />
+            </section>
         </>
     );
 }

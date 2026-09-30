@@ -27,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('person-requests', fn (Request $request): Limit => Limit::perHour(5)
             ->by($request->user()?->id ?: $request->ip()));
 
+        // Quien comparte información escribe a un contacto real: pocos mensajes por hora.
+        RateLimiter::for('offers', fn (Request $request): Limit => Limit::perHour(8)
+            ->by($request->user()?->id ?: $request->ip()));
+
         RateLimiter::for('photo-search', fn (Request $request): Limit => Limit::perMinute(10)
             ->by($request->user()?->id ?: $request->ip()));
 

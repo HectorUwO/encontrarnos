@@ -4,13 +4,17 @@ namespace App\Http\Resources;
 
 use App\Enums\PersonRequestStatus;
 use App\Enums\PhotoSize;
+use App\Models\PersonRecord;
 use App\Models\PersonRequest;
 use App\Services\Photos\PhotoCache;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 /**
- * Datos públicos de una solicitud. El correo de contacto nunca se incluye.
+ * Datos públicos de una solicitud. El correo y el teléfono de contacto nunca
+ * se incluyen: quien quiera ayudar escribe desde la ficha y el mensaje se
+ * reenvía sin revelar el contacto.
  *
  * @mixin PersonRequest
  */
@@ -31,10 +35,32 @@ class PersonRequestResource extends JsonResource
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'name' => $this->name,
-            'place' => $this->place,
+            'sex' => $this->sex?->value,
+            'sex_label' => $this->sex?->label(),
+            'age' => $this->age,
+            'state' => $this->state?->value,
+            'state_label' => $this->state?->label(),
+            'municipality' => $this->municipality,
+            'place' => $this->placeLabel(),
+            'event_date_label' => $this->event_date?->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
             'description' => $this->description,
+            'traits' => collect($this->orderedTraits())
+                ->map(fn (string $value, string $key): array => [
+                    'label' => PersonRecord::traitLabel($key),
+                    'value' => Str::lower($value),
+                ])
+                ->values()
+                ->all(),
+            'clothing' => $this->clothing,
+            'distinguishing_marks' => $this->distinguishing_marks,
+            'institution' => $this->institution,
+            'closed' => $this->isClosed(),
+            'closed_reason' => $this->closed_reason,
+            'closed_at_label' => $this->closed_at?->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'has_photo' => $this->hasPhoto() && $this->status === PersonRequestStatus::Approved,
             'photo' => $this->photoUrl(PhotoSize::Medium),
             'photo_thumb' => $this->photoUrl(PhotoSize::Thumbnail),
+            'url' => route('requests.show', $this->resource, absolute: false),
             'created_at_label' => $this->created_at->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
         ];
     }

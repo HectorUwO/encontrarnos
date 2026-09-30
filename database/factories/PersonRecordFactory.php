@@ -47,15 +47,6 @@ class PersonRecordFactory extends Factory
         return $this->state(['published_at' => null]);
     }
 
-    public function identificationRequest(): static
-    {
-        return $this->state([
-            'type' => RecordType::IdentificationRequest,
-            'disappearance_status' => null,
-            'name' => null,
-        ]);
-    }
-
     public function withPhoto(): static
     {
         return $this->state(function (): array {

@@ -4,7 +4,6 @@ namespace Tests\Feature\Services\Search;
 
 use App\Enums\AgeRange;
 use App\Enums\MexicanState;
-use App\Enums\RecordType;
 use App\Models\PersonRecord;
 use App\Services\Search\RecordSearch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,9 +31,9 @@ class RecordSearchTest extends TestCase
         ]);
     }
 
-    private function search(?string $term = 'maria', ?MexicanState $state = null, ?AgeRange $range = null, ?RecordType $type = null): LengthAwarePaginator
+    private function search(?string $term = 'maria', ?MexicanState $state = null, ?AgeRange $range = null): LengthAwarePaginator
     {
-        return app(RecordSearch::class)->paginate($term, $state, $range, $type, 12);
+        return app(RecordSearch::class)->paginate($term, $state, $range, 12);
     }
 
     /**
@@ -104,19 +103,18 @@ class RecordSearchTest extends TestCase
     }
 
     /**
-     * @return array<string, array{MexicanState|null, RecordType|null, AgeRange|null, list<string>}>
+     * @return array<string, array{MexicanState|null, AgeRange|null, list<string>}>
      */
     public static function filters(): array
     {
         return [
-            'none' => [null, null, null, []],
-            'state' => [MexicanState::Jalisco, null, null, ["state = 'jalisco'"]],
-            'state with a composite name' => [MexicanState::Mexico, null, null, ["state = 'estado-de-mexico'"]],
-            'type' => [null, RecordType::IdentificationRequest, null, ["type = 'identification_request'"]],
-            'minors' => [null, null, AgeRange::Minor, ['age >= 0', 'age <= 17']],
-            'young adults' => [null, null, AgeRange::YoungAdult, ['age >= 18', 'age <= 29']],
-            'over forty has no ceiling' => [null, null, AgeRange::Mature, ['age >= 40']],
-            'all together' => [MexicanState::Sinaloa, RecordType::MissingPerson, AgeRange::Adult, ["state = 'sinaloa'", "type = 'missing_person'", 'age >= 30', 'age <= 39']],
+            'none' => [null, null, []],
+            'state' => [MexicanState::Jalisco, null, ["state = 'jalisco'"]],
+            'state with a composite name' => [MexicanState::Mexico, null, ["state = 'estado-de-mexico'"]],
+            'minors' => [null, AgeRange::Minor, ['age >= 0', 'age <= 17']],
+            'young adults' => [null, AgeRange::YoungAdult, ['age >= 18', 'age <= 29']],
+            'over forty has no ceiling' => [null, AgeRange::Mature, ['age >= 40']],
+            'all together' => [MexicanState::Sinaloa, AgeRange::Adult, ["state = 'sinaloa'", 'age >= 30', 'age <= 39']],
         ];
     }
 
@@ -124,11 +122,11 @@ class RecordSearchTest extends TestCase
      * @param  list<string>  $expected
      */
     #[DataProvider('filters')]
-    public function test_turns_the_filters_into_meilisearch_filters(?MexicanState $state, ?RecordType $type, ?AgeRange $range, array $expected): void
+    public function test_turns_the_filters_into_meilisearch_filters(?MexicanState $state, ?AgeRange $range, array $expected): void
     {
         $this->meilisearchAnswers([]);
 
-        $this->search('maria', $state, $range, $type);
+        $this->search('maria', $state, $range);
 
         Http::assertSent(fn (Request $request): bool => $request['filter'] === $expected);
     }

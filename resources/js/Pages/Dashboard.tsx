@@ -1,58 +1,322 @@
-import { colorSymbol } from '@/brand';
-import { ActionGrid } from '@/Components/Encontrarnos/PublicTools';
+import { classNames } from '@/classNames';
+import { RequestChip } from '@/Components/Encontrarnos/RequestCatalog';
 import WorkspaceLayout from '@/Layouts/WorkspaceLayout';
-import { PageProps, PersonRecord, PersonRequestItem } from '@/types';
+import { PageProps, PersonRequestItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import {
-    ArrowRight,
+    ArrowUpRight,
     BadgeCheck,
     ChartNoAxesColumnIncreasing,
-    ImagePlus,
+    Check,
+    Inbox,
+    Mail,
+    PenLine,
+    Plus,
     Search,
-    ShieldCheck,
+    Trash2,
     X,
 } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import './dashboard.css';
+import './my-space.css';
 
-const placeOf = (record: PersonRecord) =>
-    [record.municipality, record.state_label].filter(Boolean).join(', ') ||
-    'Sin dato';
+type MyRequest = PersonRequestItem & {
+    reports_count: number;
+    unattended_count: number;
+    updated_at_label: string | null;
+};
 
-export default function Dashboard({
-    totals,
-    latestRecords,
-    myRequests,
-    emailVerified,
-}: PageProps<{
-    emailVerified?: boolean;
-    totals: { records: number; my_requests: number };
-    latestRecords: { data: PersonRecord[] };
-    myRequests: { data: PersonRequestItem[] };
-}>) {
-    const [query, setQuery] = useState('');
-    const [bannerClosed, setBannerClosed] = useState(false);
-    const records = latestRecords.data;
-    const requests = myRequests.data;
+type Report = {
+    id: number;
+    message: string;
+    phone: string | null;
+    sender: string;
+    sender_email: string | null;
+    request_id: number;
+    request_name: string | null;
+    reference: string | null;
+    attended: boolean;
+    created_at_label: string | null;
+};
 
-    const search = (event: FormEvent) => {
-        event.preventDefault();
-        const term = query.trim();
-        router.get(route('records'), term ? { q: term } : {});
+type Summary = {
+    total: number;
+    published: number;
+    pending: number;
+    closed: number;
+    unattended: number;
+    records: number;
+};
+
+const notices: Record<string, string> = {
+    'request-updated': 'Guardamos los cambios de tu solicitud.',
+    'request-updated-review':
+        'Guardamos los cambios. Tu solicitud volvió a revisión y se publicará de nuevo cuando la aprobemos.',
+    'request-resolved': 'Marcamos tu solicitud como resuelta. ¡Nos alegra!',
+    'request-withdrawn':
+        'Diste de baja tu solicitud: ya no aparece en el catálogo. Puedes reabrirla cuando quieras.',
+    'request-reopened': 'Reabrimos tu solicitud.',
+    'request-deleted': 'Eliminamos tu solicitud y su fotografía.',
+    'information-attended': 'Marcaste la información como atendida.',
+    'information-reopened': 'La información volvió a pendiente.',
+};
+
+function statusOf(request: MyRequest): { label: string; tone: string } {
+    if (request.closed) {
+        return request.closed_reason === 'resolved'
+            ? { label: 'Resuelta', tone: 'done' }
+            : { label: 'Dada de baja', tone: 'muted' };
+    }
+    return (
+        {
+            pending: { label: 'En revisión', tone: 'warn' },
+            approved: { label: 'Publicada', tone: 'ok' },
+            rejected: { label: 'Rechazada', tone: 'bad' },
+        }[request.status] ?? { label: request.status_label, tone: 'muted' }
+    );
+}
+
+function Steps({ request }: { request: MyRequest }) {
+    const steps = [
+        { label: 'Enviada', state: 'done' },
+        {
+            label: request.status === 'rejected' ? 'Rechazada' : 'Revisión',
+            state:
+                request.status === 'pending'
+                    ? 'current'
+                    : request.status === 'rejected'
+                      ? 'bad'
+                      : 'done',
+        },
+        {
+            label: 'Publicada',
+            state:
+                request.status === 'approved'
+                    ? request.closed
+                        ? 'done'
+                        : 'current'
+                    : 'todo',
+        },
+        ...(request.closed
+            ? [
+                  {
+                      label:
+                          request.closed_reason === 'resolved'
+                              ? 'Resuelta'
+                              : 'Dada de baja',
+                      state: 'current',
+                  },
+              ]
+            : []),
+    ];
+
+    return (
+        <ol className="my-steps" aria-label="Estado de la solicitud">
+            {steps.map((step) => (
+                <li key={step.label} className={`is-${step.state}`}>
+                    <span aria-hidden="true">
+                        {step.state === 'done' ? (
+                            <Check size={12} />
+                        ) : step.state === 'bad' ? (
+                            <X size={12} />
+                        ) : null}
+                    </span>
+                    {step.label}
+                </li>
+            ))}
+        </ol>
+    );
+}
+
+function RequestCard({ request }: { request: MyRequest }) {
+    const [confirming, setConfirming] = useState<'close' | 'delete' | null>(
+        null,
+    );
+    const status = statusOf(request);
+    const visit = (
+        method: 'patch' | 'delete',
+        name: string,
+        data: Record<string, string> = {},
+    ) => {
+        setConfirming(null);
+        router[method](
+            route(name, request.id),
+            method === 'patch' ? data : {},
+            {
+                preserveScroll: true,
+            } as never,
+        );
     };
 
     return (
-        <WorkspaceLayout
-            active="overview"
-            crumb="PANEL / VISTA GENERAL"
-            tag={
-                <span className="en-work-tag">
-                    <span /> {totals.records.toLocaleString('es-MX')} FICHAS
-                    PÚBLICAS
+        <article className="my-request">
+            <header>
+                <div className="req-cardhead">
+                    <RequestChip type={request.type} />
+                    <span className="req-ref">{request.reference}</span>
+                </div>
+                <span className={`my-status my-status--${status.tone}`}>
+                    {status.label}
                 </span>
-            }
-        >
-            <Head title="Panel de consulta" />
+            </header>
+            <h3>{request.name ?? 'Persona sin identificar'}</h3>
+            <p className="my-request-meta">
+                {[request.place, request.event_date_label]
+                    .filter(Boolean)
+                    .join(' · ')}
+            </p>
+            <Steps request={request} />
+            {request.status === 'rejected' && (
+                <p className="my-hint">
+                    No pudimos publicarla. Edítala con más datos y se enviará de
+                    nuevo a revisión.
+                </p>
+            )}
+            {request.status === 'pending' && (
+                <p className="my-hint">
+                    La estamos revisando. Te avisaremos por correo cuando esté
+                    lista.
+                </p>
+            )}
+            <p className="my-request-info">
+                <Mail size={15} aria-hidden="true" />
+                {request.reports_count === 0
+                    ? 'Sin mensajes todavía'
+                    : `${request.reports_count} ${request.reports_count === 1 ? 'mensaje' : 'mensajes'}`}
+                {request.unattended_count > 0 && (
+                    <strong>{request.unattended_count} sin atender</strong>
+                )}
+            </p>
+
+            {confirming ? (
+                <div className="my-confirm" role="alert">
+                    <p>
+                        {confirming === 'delete'
+                            ? 'Se eliminará la solicitud y su fotografía de forma definitiva. Esta acción no se puede deshacer.'
+                            : 'Dejará de aparecer en el catálogo y nadie podrá enviarte información. Puedes reabrirla cuando quieras.'}
+                    </p>
+                    <div>
+                        <button
+                            type="button"
+                            className={classNames(
+                                'my-button',
+                                confirming === 'delete' && 'my-button--danger',
+                            )}
+                            onClick={() =>
+                                confirming === 'delete'
+                                    ? visit('delete', 'mine.requests.destroy')
+                                    : visit('patch', 'mine.requests.close', {
+                                          reason: 'withdrawn',
+                                      })
+                            }
+                        >
+                            {confirming === 'delete'
+                                ? 'Sí, eliminar'
+                                : 'Sí, dar de baja'}
+                        </button>
+                        <button
+                            type="button"
+                            className="my-button my-button--ghost"
+                            onClick={() => setConfirming(null)}
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="my-actions">
+                    <Link
+                        href={request.url}
+                        className="my-button my-button--ghost"
+                    >
+                        Ver ficha <ArrowUpRight size={14} />
+                    </Link>
+                    <Link
+                        href={route('mine.requests.edit', request.id)}
+                        className="my-button my-button--ghost"
+                    >
+                        <PenLine size={14} /> Editar
+                    </Link>
+                    {request.closed ? (
+                        <button
+                            type="button"
+                            className="my-button"
+                            onClick={() =>
+                                visit('patch', 'mine.requests.reopen')
+                            }
+                        >
+                            Reabrir
+                        </button>
+                    ) : (
+                        <>
+                            {request.status === 'approved' && (
+                                <button
+                                    type="button"
+                                    className="my-button"
+                                    onClick={() =>
+                                        visit('patch', 'mine.requests.close', {
+                                            reason: 'resolved',
+                                        })
+                                    }
+                                >
+                                    <Check size={14} /> Marcar resuelta
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="my-button my-button--ghost"
+                                onClick={() => setConfirming('close')}
+                            >
+                                Dar de baja
+                            </button>
+                        </>
+                    )}
+                    <button
+                        type="button"
+                        className="my-button my-button--icon"
+                        aria-label="Eliminar solicitud"
+                        title="Eliminar"
+                        onClick={() => setConfirming('delete')}
+                    >
+                        <Trash2 size={15} />
+                    </button>
+                </div>
+            )}
+        </article>
+    );
+}
+
+export default function Dashboard({
+    auth,
+    summary,
+    myRequests,
+    reports,
+    emailVerified,
+    flash,
+}: PageProps<{
+    summary: Summary;
+    myRequests: MyRequest[];
+    reports: Report[];
+    emailVerified?: boolean;
+}>) {
+    const [onlyPending, setOnlyPending] = useState(summary.unattended > 0);
+    const [bannerClosed, setBannerClosed] = useState(false);
+    const notice = flash?.status ? notices[flash.status] : undefined;
+    const shownReports = onlyPending
+        ? reports.filter((report) => !report.attended)
+        : reports;
+    const firstName = auth.user.name.split(' ')[0];
+
+    const tiles: [string, number, boolean?][] = [
+        ['MIS SOLICITUDES', summary.total],
+        ['PUBLICADAS', summary.published],
+        ['EN REVISIÓN', summary.pending],
+        ['INFORMACIÓN SIN ATENDER', summary.unattended, summary.unattended > 0],
+    ];
+
+    return (
+        <WorkspaceLayout active="overview" crumb="MI ESPACIO / SEGUIMIENTO">
+            <Head title="Mi espacio" />
             <main className="en-work-content">
                 {emailVerified && !bannerClosed && (
                     <div className="en-work-banner" role="status">
@@ -75,165 +339,237 @@ export default function Dashboard({
                 <div className="en-work-intro">
                     <div>
                         <span className="en-work-kicker">
-                            ENCONTRARNOS / PANEL DE CONSULTA
+                            ENCONTRARNOS / MI ESPACIO
                         </span>
-                        <h1>SEGUIR BUSCANDO.</h1>
+                        <h1>SEGUIMIENTO.</h1>
                         <p>
-                            Consulta la base de datos, revisa estadísticas o
-                            busca con una fotografía. También puedes ver y
-                            preparar solicitudes.
+                            Hola, {firstName}. Aquí ves cómo van tus
+                            solicitudes, atiendes la información que llega y las
+                            editas, das de baja o cierras cuando sea necesario.
                         </p>
                     </div>
-                    <div className="en-work-intro-mark">
-                        <img src={colorSymbol} alt="" />
+                    <div className="my-cta">
+                        <Link
+                            href={route('requests.create', { tipo: 'search' })}
+                            className="en-profile-button"
+                        >
+                            <Plus size={15} style={{ marginRight: 8 }} />
+                            Busco a una persona
+                        </Link>
+                        <Link
+                            href={route('requests.create', {
+                                tipo: 'identification',
+                            })}
+                            className="en-profile-button en-profile-button-ghost"
+                        >
+                            <Plus size={15} style={{ marginRight: 8 }} />
+                            Quiero identificar a alguien
+                        </Link>
                     </div>
                 </div>
-                <div id="herramientas">
-                    <ActionGrid />
-                </div>
-                <section className="en-work-registers" id="registros">
-                    <div className="en-work-section-top">
-                        <div>
-                            <span className="en-work-kicker">
-                                MÓDULO DE REGISTROS
-                            </span>
-                            <h2>Últimas fichas</h2>
-                        </div>
-                        <span className="en-work-sample-label">
-                            {totals.records.toLocaleString('es-MX')} FICHAS
-                            PÚBLICAS
-                        </span>
-                    </div>
-                    <form
-                        className="en-work-search"
-                        role="search"
-                        onSubmit={search}
+
+                {notice && (
+                    <div
+                        className="en-profile-status"
+                        role="status"
+                        style={{ marginTop: 24 }}
                     >
-                        <Search size={18} aria-hidden="true" />
-                        <input
-                            type="search"
-                            value={query}
-                            onChange={(event) => setQuery(event.target.value)}
-                            placeholder="Buscar por nombre, folio o lugar"
-                            aria-label="Buscar en la base de datos"
-                        />
-                    </form>
-                    <div className="en-work-table">
-                        <div className="en-work-table-head">
-                            <span>FICHA</span>
-                            <span>UBICACIÓN</span>
-                            <span>TIPO</span>
-                            <span>FECHA</span>
+                        {notice}
+                    </div>
+                )}
+
+                <div className="en-admin-stats">
+                    {tiles.map(([label, value, alert]) => (
+                        <div
+                            className={classNames(
+                                'en-admin-stat',
+                                alert && 'my-stat--alert',
+                            )}
+                            key={label}
+                        >
+                            <span>{label}</span>
+                            <strong>{value.toLocaleString('es-MX')}</strong>
                         </div>
-                        {records.length ? (
-                            records.map((record) => (
+                    ))}
+                </div>
+
+                <div className="my-grid">
+                    <section aria-labelledby="my-requests-title">
+                        <div className="my-section-head">
+                            <h2 id="my-requests-title">Mis solicitudes</h2>
+                        </div>
+                        {myRequests.length === 0 ? (
+                            <div className="my-empty">
+                                <h3>Todavía no tienes solicitudes</h3>
+                                <p>
+                                    Publica una solicitud de búsqueda o de
+                                    identificación y aquí podrás darle
+                                    seguimiento.
+                                </p>
                                 <Link
-                                    className="en-work-table-row"
-                                    key={record.folio}
-                                    href={route('records', {
-                                        q: record.folio,
-                                    })}
+                                    href={route('requests.create')}
+                                    className="en-profile-button"
                                 >
-                                    <div className="en-work-table-identity">
-                                        <span className="en-work-table-avatar">
-                                            <img
-                                                src={record.portrait}
-                                                alt=""
-                                                className={
-                                                    record.has_photo
-                                                        ? 'is-photo'
-                                                        : undefined
-                                                }
-                                                loading="lazy"
-                                                decoding="async"
-                                            />
-                                        </span>
-                                        <strong>
-                                            {record.name}
-                                            <small>{record.folio}</small>
-                                        </strong>
-                                    </div>
-                                    <span>{placeOf(record)}</span>
-                                    <span>
-                                        {record.type_label}
-                                        {record.status_label && (
-                                            <small>{record.status_label}</small>
-                                        )}
-                                    </span>
-                                    <span>
-                                        {record.event_date_label ?? 'Sin fecha'}
-                                    </span>
+                                    Crear mi primera solicitud
                                 </Link>
-                            ))
+                            </div>
                         ) : (
-                            <div className="en-work-empty">
-                                Todavía no hay fichas públicas.
+                            <div className="my-list">
+                                {myRequests.map((request) => (
+                                    <RequestCard
+                                        key={request.id}
+                                        request={request}
+                                    />
+                                ))}
                             </div>
                         )}
-                    </div>
-                    <div className="en-work-table-note">
-                        <ShieldCheck size={15} /> Solo se muestran las fichas
-                        que el registro nacional marca como públicas.
-                    </div>
-                </section>
-                <div className="en-work-lower">
-                    <section id="solicitudes">
-                        <div className="en-work-lower-icon">
-                            <ImagePlus size={22} />
+                    </section>
+
+                    <section
+                        className="my-inbox"
+                        aria-labelledby="my-inbox-title"
+                    >
+                        <div className="my-section-head">
+                            <h2 id="my-inbox-title">
+                                <Inbox size={20} /> Información recibida
+                            </h2>
+                            <div className="my-tabs" role="tablist">
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={onlyPending}
+                                    className={classNames(
+                                        onlyPending && 'is-on',
+                                    )}
+                                    onClick={() => setOnlyPending(true)}
+                                >
+                                    Sin atender
+                                </button>
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={!onlyPending}
+                                    className={classNames(
+                                        !onlyPending && 'is-on',
+                                    )}
+                                    onClick={() => setOnlyPending(false)}
+                                >
+                                    Todas
+                                </button>
+                            </div>
                         </div>
-                        <span className="en-work-kicker">
-                            MIS SOLICITUDES
-                            {totals.my_requests > 0 &&
-                                ` · ${totals.my_requests}`}
-                        </span>
-                        <h2>COMPARTIR LO QUE SABEMOS.</h2>
-                        {requests.length ? (
-                            <ul className="en-work-requests">
-                                {requests.slice(0, 3).map((request) => (
-                                    <li key={request.id}>
-                                        <strong>
-                                            {request.name ?? request.type_label}
-                                        </strong>
-                                        <small>
-                                            {request.reference} ·{' '}
-                                            {request.status_label}
-                                        </small>
+                        {shownReports.length === 0 ? (
+                            <div className="my-empty my-empty--small">
+                                <p>
+                                    {reports.length === 0
+                                        ? 'Cuando alguien comparta información sobre tus solicitudes, la verás aquí y te llegará por correo.'
+                                        : 'No tienes información pendiente. ¡Todo atendido!'}
+                                </p>
+                            </div>
+                        ) : (
+                            <ul className="my-reports">
+                                {shownReports.map((report) => (
+                                    <li
+                                        key={report.id}
+                                        className={classNames(
+                                            report.attended && 'is-attended',
+                                        )}
+                                    >
+                                        <div className="my-report-head">
+                                            <strong>{report.sender}</strong>
+                                            <span>
+                                                {report.created_at_label}
+                                            </span>
+                                        </div>
+                                        <p className="my-report-about">
+                                            Sobre{' '}
+                                            <Link
+                                                href={route(
+                                                    'requests.show',
+                                                    report.request_id,
+                                                )}
+                                            >
+                                                {report.reference} ·{' '}
+                                                {report.request_name ??
+                                                    'persona sin identificar'}
+                                            </Link>
+                                        </p>
+                                        <p className="my-report-message">
+                                            {report.message}
+                                        </p>
+                                        <div className="my-report-actions">
+                                            {report.sender_email && (
+                                                <a
+                                                    href={`mailto:${report.sender_email}?subject=${encodeURIComponent(`Sobre la solicitud ${report.reference}`)}`}
+                                                    className="my-button"
+                                                >
+                                                    <Mail size={14} /> Responder
+                                                </a>
+                                            )}
+                                            {report.phone && (
+                                                <a
+                                                    href={`tel:${report.phone}`}
+                                                    className="my-button my-button--ghost"
+                                                >
+                                                    {report.phone}
+                                                </a>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="my-button my-button--ghost"
+                                                onClick={() =>
+                                                    router.patch(
+                                                        route(
+                                                            'mine.information.attend',
+                                                            report.id,
+                                                        ),
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
+                                            >
+                                                {report.attended
+                                                    ? 'Reabrir'
+                                                    : 'Marcar atendida'}
+                                            </button>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
-                        ) : (
-                            <p>
-                                Todavía no has enviado solicitudes. Comparte una
-                                descripción, una fotografía y un canal de
-                                contacto para dar seguimiento.
-                            </p>
                         )}
-                        <Link href={route('requests')}>
-                            Ver o crear solicitudes <ArrowRight size={17} />
-                        </Link>
-                    </section>
-                    <section>
-                        <div className="en-work-lower-icon">
-                            <ChartNoAxesColumnIncreasing size={22} />
-                        </div>
-                        <span className="en-work-kicker">ESTADÍSTICAS</span>
-                        <h2>MIRAR LOS DATOS.</h2>
-                        <p>
-                            Explora el mapa del país, el histórico y el perfil
-                            de las personas por entidad y por año.
+                        <p className="my-safety">
+                            Verifica la información antes de actuar y, si hay un
+                            riesgo inmediato, llama al 911.
                         </p>
-                        <Link href={route('statistics')}>
-                            Ver estadísticas <ArrowRight size={17} />
-                        </Link>
                     </section>
                 </div>
-                <footer className="en-work-footer">
-                    Encontrarnos · Panel de consulta{' '}
-                    <span>
-                        Fuente: Registro Nacional de Personas Desaparecidas y No
-                        Localizadas
-                    </span>
-                </footer>
+
+                <nav className="my-shortcuts" aria-label="Accesos rápidos">
+                    <Link href={route('records')}>
+                        <Search size={18} />
+                        <span>
+                            <strong>Base de datos</strong>
+                            {summary.records.toLocaleString('es-MX')} fichas
+                            públicas
+                        </span>
+                    </Link>
+                    <Link href={route('requests')}>
+                        <Inbox size={18} />
+                        <span>
+                            <strong>Catálogo de solicitudes</strong>
+                            Consulta las de otras personas
+                        </span>
+                    </Link>
+                    <Link href={route('statistics')}>
+                        <ChartNoAxesColumnIncreasing size={18} />
+                        <span>
+                            <strong>Estadísticas</strong>
+                            Mapa, histórico y perfil
+                        </span>
+                    </Link>
+                </nav>
             </main>
         </WorkspaceLayout>
     );
