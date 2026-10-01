@@ -12,6 +12,11 @@
 html {
     scroll-behavior: smooth;
 }
+/* Al rebotar en los extremos del documento se ve el lienzo: papel arriba y
+   verde oscuro abajo (el color del pie), no blanco. */
+html:has(.en-page) {
+    background: linear-gradient(var(--en-paper) 50%, var(--en-ink) 50%) fixed;
+}
 .en-page {
     position: relative;
     overflow: clip;
@@ -1608,9 +1613,6 @@ a:focus-visible .en-brand .en-brand-period {
     html {
         scroll-padding-bottom: 100px;
     }
-    .en-page {
-        padding-bottom: calc(80px + env(safe-area-inset-bottom));
-    }
     .en-header {
         padding: 13px 5%;
         min-height: 78px;
@@ -1924,7 +1926,7 @@ a:focus-visible .en-brand .en-brand-period {
         font-size: 29px;
     }
     .en-footer {
-        padding: 48px 5% 25px;
+        padding: 48px 5% calc(25px + 80px + env(safe-area-inset-bottom));
     }
     .en-footer-top {
         gap: 22px;

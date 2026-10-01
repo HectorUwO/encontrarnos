@@ -58,6 +58,21 @@ return [
             ] : [],
         ],
 
+        // Copia completa de la base del colector en MySQL (el contenedor, por
+        // defecto), que sustituye al SQLite de ~46 GB una vez verificada.
+        'rnpdno_backup' => [
+            'driver' => 'mysql',
+            'host' => env('RNPDNO_BACKUP_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('RNPDNO_BACKUP_PORT', env('DB_PORT', '3306')),
+            'database' => env('RNPDNO_BACKUP_DATABASE', 'rnpdno'),
+            'username' => env('RNPDNO_BACKUP_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('RNPDNO_BACKUP_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_0900_ai_ci',
+            'prefix' => '',
+            'strict' => true,
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

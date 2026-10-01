@@ -77,3 +77,5 @@ services:
 
 volumes:
   compreface-data:
+    # Conserva el volumen del despliegue anterior (con la llave de API y los rostros).
+    name: encontrarnos-compreface_compreface-data

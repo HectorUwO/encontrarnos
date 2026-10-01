@@ -101,6 +101,23 @@ npm.cmd run build
 
 Este comando comprueba TypeScript y genera los archivos de producción en `public/build`.
 
+## Docker
+
+`compose.yaml` levanta todo junto: app (nginx + PHP-FPM), cola, programador, MySQL 8.4, Meilisearch y CompreFace (`compose.compreface.yaml`, con GPU NVIDIA). Todo vive en volúmenes de Docker: la base `encontrarnos` y la copia completa del colector RNPDNO (base `rnpdno`) en MySQL, y las fotografías de las fichas en el volumen `record-photos`.
+
+```powershell
+Copy-Item .env.docker.example .env.docker   # completa contraseñas, APP_KEY y COMPREFACE_API_KEY
+docker compose --env-file .env.docker up -d --build
+```
+
+Usa siempre `--env-file .env.docker`: sin él Compose lee el `.env` de desarrollo. La app queda en `http://127.0.0.1:8080` y migra sola al arrancar. El MySQL del contenedor también escucha en `127.0.0.1:3307` (para herramientas de escritorio). `php artisan records:backup-rnpdno` copió tal cual las 13 tablas del colector a la base `rnpdno` y verificó filas y bytes; `records:import-rnpdno` leía el SQLite original (ya retirado) y no se necesita porque el colector terminó. Crea la aplicación de reconocimiento en la interfaz de CompreFace (`http://127.0.0.1:8001`) para obtener `COMPREFACE_API_KEY`.
+
+### Que Docker no llene C:
+
+Imágenes y volúmenes (MySQL, Meilisearch, CompreFace, miniaturas) viven dentro del disco virtual de Docker Desktop, que por defecto está en `C:\Users\<usuario>\AppData\Local\Docker\wsl\disk\docker_data.vhdx`. Muévelo a D:: Docker Desktop → Settings → Resources → Advanced → **Disk image location** → `D:\Docker` → Apply & restart. Docker copia el disco existente, así que conserva imágenes y volúmenes. El volumen `compreface-data` conserva su nombre anterior, así que tampoco hay que migrar nada más.
+
+Para recuperar espacio dentro de ese disco: `docker image prune` y `docker builder prune`.
+
 ## Dónde editar
 
 | Archivo | Contenido |
