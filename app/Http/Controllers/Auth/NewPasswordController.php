@@ -62,8 +62,9 @@ class NewPasswordController extends Controller
             return redirect()->route('login')->with('status', __($status));
         }
 
+        // Un correo que no corresponde al enlace se trata como un enlace inválido.
         throw ValidationException::withMessages([
-            'email' => [trans($status)],
+            'email' => [trans($status === Password::INVALID_USER ? Password::INVALID_TOKEN : $status)],
         ]);
     }
 }

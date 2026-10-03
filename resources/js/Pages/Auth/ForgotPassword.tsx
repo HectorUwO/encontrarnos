@@ -1,6 +1,6 @@
 import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export default function ForgotPassword({ status }: { status?: string }) {
@@ -55,6 +55,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     Enviar enlace <ActionIcon pending={processing} />
                 </button>
             </form>
+            <p className="en-auth-switch">
+                ¿Ya la recordaste?{' '}
+                <Link href={route('login')}>Volver a iniciar sesión</Link>
+            </p>
         </GuestLayout>
     );
 }

@@ -1,6 +1,6 @@
 import { ActionIcon } from '@/Components/Encontrarnos/motion';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export default function ResetPassword({
@@ -97,6 +97,18 @@ export default function ResetPassword({
                     Guardar contraseña <ActionIcon pending={processing} />
                 </button>
             </form>
+            <p className="en-auth-switch">
+                {errors.email ? (
+                    <>
+                        ¿El enlace no sirve o ya venció?{' '}
+                        <Link href={route('password.request')}>
+                            Pedir un enlace nuevo
+                        </Link>
+                    </>
+                ) : (
+                    <Link href={route('login')}>Volver a iniciar sesión</Link>
+                )}
+            </p>
         </GuestLayout>
     );
 }
