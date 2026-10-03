@@ -39,7 +39,6 @@ import {
     Info,
     Landmark,
     Languages,
-    Lock,
     MapPin,
     Radio,
     Search,
@@ -280,15 +279,7 @@ export default function FichaDesaparecido({
                                 ]}
                             />
                         </FichaCard>
-                    ) : (
-                        <p className="req-restricted" role="note">
-                            <Lock size={20} aria-hidden="true" />
-                            <span>
-                                Los datos personales de esta ficha (nacimiento y
-                                domicilio) están restringidos.
-                            </span>
-                        </p>
-                    )}
+                    ) : null}
 
                     {sensitive && (
                         <FichaCard

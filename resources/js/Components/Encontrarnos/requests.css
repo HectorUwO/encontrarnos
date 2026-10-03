@@ -1006,21 +1006,6 @@
     font-size: 10px;
     letter-spacing: 0.08em;
 }
-.req-restricted {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 34px;
-    padding: 16px 18px;
-    border: 1px dashed #b55049;
-    background: #fbeae6;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #7a2a1b;
-}
-.req-restricted svg {
-    flex: none;
-}
 .req-referrals {
     display: grid;
     gap: 8px;
