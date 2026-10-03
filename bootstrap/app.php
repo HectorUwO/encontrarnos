@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectToCanonicalHost;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,9 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(
-            at: ['127.0.0.1', '::1'],
+            // En Docker el tráfico llega de cloudflared por la puerta de enlace de la red:
+            // TRUSTED_PROXIES=* (el puerto solo se publica en 127.0.0.1).
+            at: env('TRUSTED_PROXIES') === '*' ? '*' : ['127.0.0.1', '::1'],
             headers: Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PROTO,
         );
+
+        $middleware->prepend(RedirectToCanonicalHost::class);
 
         $middleware->web(append: [
             HandleInertiaRequests::class,

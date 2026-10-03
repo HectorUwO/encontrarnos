@@ -38,6 +38,8 @@ services:
   queue:
     <<: *app
     command: ['php', 'artisan', 'queue:work', '--tries=3', '--max-time=3600']
+    healthcheck:
+      disable: true
     depends_on:
       app:
         condition: service_healthy
@@ -45,6 +47,8 @@ services:
   scheduler:
     <<: *app
     command: ['php', 'artisan', 'schedule:work']
+    healthcheck:
+      disable: true
     depends_on:
       app:
         condition: service_healthy
