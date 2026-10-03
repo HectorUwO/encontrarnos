@@ -6,6 +6,28 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+        @php
+            $shareTitle = config('app.name', 'Encontrarnos').' · Búsqueda de personas en México';
+            $shareDescription = 'Consulta fichas de personas desaparecidas, comparte información y ayuda a encontrarlas.';
+            $shareImage = url('/og-image.png').'?v=2';
+        @endphp
+        <meta name="description" content="{{ $shareDescription }}">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="{{ config('app.name', 'Encontrarnos') }}">
+        <meta property="og:locale" content="es_MX">
+        <meta property="og:title" content="{{ $shareTitle }}">
+        <meta property="og:description" content="{{ $shareDescription }}">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:image" content="{{ $shareImage }}">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:alt" content="Encontrarnos. Hasta encontrarnos · Búsqueda de personas en México">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $shareTitle }}">
+        <meta name="twitter:description" content="{{ $shareDescription }}">
+        <meta name="twitter:image" content="{{ $shareImage }}">
+
         <link rel="icon" href="/favicon.ico" sizes="48x48">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
