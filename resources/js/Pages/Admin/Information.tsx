@@ -34,9 +34,7 @@ export default function AdminInformation({ reports }: { reports: Paginated }) {
             <main className="en-work-content">
                 <div className="en-work-intro">
                     <div>
-                        <span className="en-work-kicker">
-                            ENCONTRARNOS / ADMINISTRACIÓN
-                        </span>
+                        <span className="en-work-kicker">ADMINISTRACIÓN</span>
                         <h1>INFORMACIÓN.</h1>
                         <p>
                             Lo que la gente compartió sobre fichas de personas

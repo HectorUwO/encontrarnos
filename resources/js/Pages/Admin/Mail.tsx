@@ -124,9 +124,7 @@ export default function AdminMail({
             <main className="en-work-content">
                 <div className="en-work-intro">
                     <div>
-                        <span className="en-work-kicker">
-                            ENCONTRARNOS / ADMINISTRACIÓN
-                        </span>
+                        <span className="en-work-kicker">ADMINISTRACIÓN</span>
                         <h1>ENVIAR CORREOS.</h1>
                         <p>
                             Escribe un comunicado y se enviará con la misma

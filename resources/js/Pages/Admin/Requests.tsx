@@ -15,6 +15,12 @@ const tabs = [
     ['rejected', 'Rechazadas'],
 ] as const;
 
+const emptyMessages: Record<string, string> = {
+    pending: 'Todo al día: no hay solicitudes esperando revisión.',
+    approved: 'Aún no has publicado ninguna solicitud.',
+    rejected: 'No has rechazado ninguna solicitud.',
+};
+
 const messages: Record<string, string> = {
     'request-approved': 'Publicamos la solicitud y avisamos a quien la envió.',
     'request-rejected': 'Rechazamos la solicitud y avisamos a quien la envió.',
@@ -50,9 +56,7 @@ export default function AdminRequests({
             <main className="en-work-content">
                 <div className="en-work-intro">
                     <div>
-                        <span className="en-work-kicker">
-                            ENCONTRARNOS / ADMINISTRACIÓN
-                        </span>
+                        <span className="en-work-kicker">ADMINISTRACIÓN</span>
                         <h1>SOLICITUDES.</h1>
                         <p>
                             Revisa cada solicitud antes de publicarla. Al
@@ -69,17 +73,21 @@ export default function AdminRequests({
                         {notice}
                     </div>
                 )}
-                <div className="en-admin-actions" role="tablist">
+                <nav
+                    className="en-admin-tabs"
+                    aria-label="Estado de las solicitudes"
+                >
                     {tabs.map(([value, label]) => (
                         <Link
                             key={value}
                             href={route('admin.requests', { estado: value })}
+                            aria-current={status === value ? 'page' : undefined}
                             className={`en-profile-button ${status === value ? '' : 'en-profile-button-ghost'}`}
                         >
                             {label} ({counts[value] ?? 0})
                         </Link>
                     ))}
-                </div>
+                </nav>
                 <div className="en-admin-review">
                     {requests.data.map((item) => {
                         const contact = requests.contacts[item.id];
@@ -172,8 +180,9 @@ export default function AdminRequests({
                         );
                     })}
                     {requests.data.length === 0 && (
-                        <p className="en-admin-review-meta">
-                            No hay solicitudes en esta sección.
+                        <p className="en-admin-empty">
+                            {emptyMessages[status] ??
+                                'No hay solicitudes en esta sección.'}
                         </p>
                     )}
                 </div>

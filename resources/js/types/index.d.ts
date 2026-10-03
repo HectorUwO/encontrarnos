@@ -13,6 +13,8 @@ export type PageProps<
         user: User;
     };
     flash?: { status?: string | null };
+    /** Solicitudes por revisar; solo llega a administradores. */
+    adminPending?: number | null;
 };
 
 export interface Option {

@@ -10,6 +10,7 @@ import {
     Inbox,
     LayoutDashboard,
     LogOut,
+    LucideIcon,
     Mail,
     Menu,
     ShieldCheck,
@@ -21,21 +22,33 @@ import {
 import { PropsWithChildren, ReactNode, useState } from 'react';
 import '../Pages/dashboard.css';
 
+type Section =
+    | 'overview'
+    | 'profile'
+    | 'admin'
+    | 'admin-users'
+    | 'admin-requests'
+    | 'admin-information'
+    | 'admin-mail';
+
 type Props = PropsWithChildren<{
     /** Texto del encabezado superior, p. ej. "PANEL / VISTA GENERAL". */
     crumb: string;
     /** Sección activa del menú lateral. */
-    active:
-        | 'overview'
-        | 'profile'
-        | 'admin'
-        | 'admin-users'
-        | 'admin-requests'
-        | 'admin-information'
-        | 'admin-mail';
+    active: Section;
     /** Elemento opcional a la derecha del encabezado superior. */
     tag?: ReactNode;
 }>;
+
+type Item = {
+    href: string;
+    label: string;
+    icon: LucideIcon;
+    /** Sección del panel a la que pertenece; sin ella es un enlace externo al panel. */
+    section?: Section;
+    /** Cantidad por atender, mostrada como insignia. */
+    badge?: number | null;
+};
 
 export default function WorkspaceLayout({
     crumb,
@@ -43,9 +56,116 @@ export default function WorkspaceLayout({
     tag,
     children,
 }: Props) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, adminPending } = usePage<PageProps>().props;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const closeMenu = () => setMobileMenuOpen(false);
+
+    const mine: Item[] = [
+        {
+            href: route('dashboard'),
+            label: 'Mi espacio',
+            icon: LayoutDashboard,
+            section: 'overview',
+        },
+        {
+            href: route('profile.edit'),
+            label: 'Mi cuenta',
+            icon: UserRound,
+            section: 'profile',
+        },
+    ];
+    const explore: Item[] = [
+        { href: route('records'), label: 'Base de datos', icon: FileText },
+        {
+            href: route('statistics'),
+            label: 'Estadísticas',
+            icon: ChartNoAxesColumnIncreasing,
+        },
+        {
+            href: route('photo-search'),
+            label: 'Búsqueda por foto',
+            icon: Fingerprint,
+        },
+        {
+            href: route('requests'),
+            label: 'Solicitudes públicas',
+            icon: UsersRound,
+        },
+    ];
+    const admin: Item[] = [
+        {
+            href: route('admin.dashboard'),
+            label: 'Resumen',
+            icon: ShieldCheck,
+            section: 'admin',
+        },
+        {
+            href: route('admin.requests'),
+            label: 'Revisar solicitudes',
+            icon: ClipboardCheck,
+            section: 'admin-requests',
+            badge: adminPending,
+        },
+        {
+            href: route('admin.information'),
+            label: 'Información recibida',
+            icon: Inbox,
+            section: 'admin-information',
+        },
+        {
+            href: route('admin.users'),
+            label: 'Usuarios',
+            icon: Users,
+            section: 'admin-users',
+        },
+        {
+            href: route('admin.mail'),
+            label: 'Enviar correos',
+            icon: Mail,
+            section: 'admin-mail',
+        },
+    ];
+
+    const group = (label: string, items: Item[], first = false) => (
+        <>
+            <div
+                className={`en-work-side-label ${first ? '' : 'en-work-side-label-sub'}`}
+            >
+                {label}
+            </div>
+            <nav className="en-work-nav" aria-label={label}>
+                {items.map(
+                    ({ href, label: text, icon: Icon, section, badge }) => (
+                        <Link
+                            key={href}
+                            href={href}
+                            className={
+                                section !== undefined && active === section
+                                    ? 'en-work-nav-active'
+                                    : undefined
+                            }
+                            aria-current={
+                                section !== undefined && active === section
+                                    ? 'page'
+                                    : undefined
+                            }
+                            onClick={closeMenu}
+                        >
+                            <Icon size={18} aria-hidden="true" /> {text}
+                            {badge ? (
+                                <span
+                                    className="en-work-badge"
+                                    aria-label={`${badge} por revisar`}
+                                >
+                                    {badge}
+                                </span>
+                            ) : null}
+                        </Link>
+                    ),
+                )}
+            </nav>
+        </>
+    );
 
     return (
         <div className="en-workspace">
@@ -58,110 +178,17 @@ export default function WorkspaceLayout({
                         encontrarnos<span>.</span>
                     </span>
                 </Link>
-                <div className="en-work-side-label">ÁREA DE TRABAJO</div>
-                <nav className="en-work-nav" aria-label="Navegación del panel">
-                    <Link
-                        href={route('dashboard')}
-                        className={
-                            active === 'overview'
-                                ? 'en-work-nav-active'
-                                : undefined
-                        }
-                        onClick={closeMenu}
-                    >
-                        <LayoutDashboard size={18} /> Mi espacio
-                    </Link>
-                    <Link href={route('records')}>
-                        <FileText size={18} /> Base de datos
-                    </Link>
-                    <Link href={route('statistics')}>
-                        <ChartNoAxesColumnIncreasing size={18} /> Estadísticas
-                    </Link>
-                    <Link href={route('photo-search')}>
-                        <Fingerprint size={18} /> Búsqueda por fotografía
-                    </Link>
-                    <Link href={route('requests')}>
-                        <UsersRound size={18} /> Ver o crear solicitudes
-                    </Link>
-                    <Link
-                        href={route('profile.edit')}
-                        className={
-                            active === 'profile'
-                                ? 'en-work-nav-active'
-                                : undefined
-                        }
-                        onClick={closeMenu}
-                    >
-                        <UserRound size={18} /> Mi cuenta
-                    </Link>
-                </nav>
-                {auth.user.is_admin && (
-                    <>
-                        <div className="en-work-side-label en-work-side-label-sub">
-                            ADMINISTRACIÓN
-                        </div>
-                        <nav
-                            className="en-work-nav"
-                            aria-label="Administración"
-                        >
-                            <Link
-                                href={route('admin.dashboard')}
-                                className={
-                                    active === 'admin'
-                                        ? 'en-work-nav-active'
-                                        : undefined
-                                }
-                                onClick={closeMenu}
-                            >
-                                <ShieldCheck size={18} /> Panel admin
-                            </Link>
-                            <Link
-                                href={route('admin.users')}
-                                className={
-                                    active === 'admin-users'
-                                        ? 'en-work-nav-active'
-                                        : undefined
-                                }
-                                onClick={closeMenu}
-                            >
-                                <Users size={18} /> Usuarios
-                            </Link>
-                            <Link
-                                href={route('admin.requests')}
-                                className={
-                                    active === 'admin-requests'
-                                        ? 'en-work-nav-active'
-                                        : undefined
-                                }
-                                onClick={closeMenu}
-                            >
-                                <ClipboardCheck size={18} /> Solicitudes
-                            </Link>
-                            <Link
-                                href={route('admin.information')}
-                                className={
-                                    active === 'admin-information'
-                                        ? 'en-work-nav-active'
-                                        : undefined
-                                }
-                                onClick={closeMenu}
-                            >
-                                <Inbox size={18} /> Información
-                            </Link>
-                            <Link
-                                href={route('admin.mail')}
-                                className={
-                                    active === 'admin-mail'
-                                        ? 'en-work-nav-active'
-                                        : undefined
-                                }
-                                onClick={closeMenu}
-                            >
-                                <Mail size={18} /> Correos
-                            </Link>
-                        </nav>
-                    </>
-                )}
+                <div className="en-work-sidebar-scroll">
+                    {auth.user.is_admin ? (
+                        <>
+                            {group('ADMINISTRACIÓN', admin, true)}
+                            {group('MI ESPACIO', mine)}
+                        </>
+                    ) : (
+                        group('MI ESPACIO', mine, true)
+                    )}
+                    {group('EXPLORAR EL SITIO', explore)}
+                </div>
                 <div className="en-work-sidebar-bottom">
                     <div className="en-work-user">
                         <span className="en-work-user-avatar">

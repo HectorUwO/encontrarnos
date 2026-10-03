@@ -1335,3 +1335,206 @@
         position: static;
     }
 }
+
+/* Menú lateral: grupos compactos con desplazamiento propio, para que el
+   usuario y el cierre de sesión no queden fuera de la pantalla. */
+.en-work-sidebar {
+    overflow: hidden;
+}
+.en-work-sidebar-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin: 0 -19px;
+    padding: 0 19px;
+    scrollbar-width: thin;
+    scrollbar-color: #3d6b78 transparent;
+}
+.en-work-sidebar-scroll .en-work-side-label {
+    margin: 34px 0 12px;
+}
+.en-work-sidebar-scroll .en-work-side-label-sub {
+    margin: 26px 0 12px;
+}
+.en-work-sidebar-scroll .en-work-nav {
+    gap: 2px;
+}
+.en-work-sidebar-scroll .en-work-nav a {
+    padding: 10px 14px;
+}
+.en-work-badge {
+    margin-left: auto;
+    min-width: 22px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #bf432d;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.4;
+    text-align: center;
+}
+.en-work-sidebar-bottom .en-work-user {
+    margin-top: 12px;
+    padding-top: 14px;
+}
+
+/* Botones y pestañas del panel */
+.en-profile-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.en-admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+/* Resumen: primero lo que necesita una decisión */
+.en-admin-section {
+    margin-top: 40px;
+}
+.en-admin-section .en-admin-stats {
+    margin-top: 16px;
+}
+.en-admin-todo {
+    margin-top: 32px;
+}
+.en-admin-alert {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 14px;
+    padding: 18px 22px;
+    background: #fbeae6;
+    border: 1px solid #172e2b;
+    border-left: 8px solid #bf432d;
+    box-shadow: 5px 5px 0 #172e2b;
+    color: #172e2b;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+.en-admin-alert:hover {
+    background: #f6d9d2;
+}
+.en-admin-alert strong {
+    font:
+        800 44px/1 system-ui,
+        sans-serif;
+    color: #bf432d;
+}
+.en-admin-alert span {
+    font-size: 15px;
+    font-weight: 700;
+}
+.en-admin-alert em {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-style: normal;
+    font-size: 13px;
+    font-weight: 800;
+}
+.en-admin-queue {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    background: #fbf8ef;
+    border: 1px solid #172e2b;
+}
+.en-admin-queue li + li {
+    border-top: 1px solid #d8d3c1;
+}
+.en-admin-queue a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    color: #172e2b;
+    text-decoration: none;
+}
+.en-admin-queue a:hover {
+    background: #f0ecdf;
+}
+.en-admin-queue a > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.en-admin-queue strong {
+    font-size: 14px;
+}
+.en-admin-queue small {
+    color: #5d6f68;
+    font-size: 12px;
+}
+.en-admin-queue time {
+    flex: none;
+    color: #5d6f68;
+    font-size: 12px;
+}
+.en-admin-clear,
+.en-admin-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 0;
+    font-size: 14px;
+    color: #1f4a3a;
+}
+.en-admin-clear {
+    padding: 16px 18px;
+    background: #e5f0e4;
+    border: 1px solid #356d58;
+    border-left: 6px solid #356d58;
+}
+.en-admin-note {
+    color: #5d6f68;
+}
+.en-admin-note a {
+    color: #172e2b;
+    font-weight: 700;
+}
+.en-admin-empty {
+    margin: 0;
+    padding: 28px 22px;
+    border: 1px dashed #8a9a8f;
+    background: #fbf8ef;
+    color: #5d6f68;
+    font-size: 14px;
+    text-align: center;
+}
+@media (max-width: 600px) {
+    .en-admin-alert {
+        flex-wrap: wrap;
+        gap: 8px 14px;
+    }
+    .en-admin-alert em {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+.en-admin-section .en-admin-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 700px) {
+    .en-admin-section .en-admin-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+    .en-admin-section .en-admin-stat {
+        padding: 14px;
+    }
+}
+.en-work-nav-active .en-work-badge {
+    background: #fff;
+    color: #bf432d;
+}

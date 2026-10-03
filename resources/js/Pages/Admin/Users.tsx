@@ -55,9 +55,7 @@ export default function AdminUsers({
             <main className="en-work-content">
                 <div className="en-work-intro">
                     <div>
-                        <span className="en-work-kicker">
-                            ENCONTRARNOS / ADMINISTRACIÓN
-                        </span>
+                        <span className="en-work-kicker">ADMINISTRACIÓN</span>
                         <h1>USUARIOS.</h1>
                         <p>
                             {users.total.toLocaleString('es-MX')} cuentas

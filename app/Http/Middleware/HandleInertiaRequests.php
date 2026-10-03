@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\PersonRequestStatus;
+use App\Models\PersonRequest;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,6 +39,10 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],
+            // Pendientes para la insignia del menú: solo se calculan para administradores.
+            'adminPending' => fn (): ?int => $request->user()?->is_admin
+                ? PersonRequest::where('status', PersonRequestStatus::Pending)->count()
+                : null,
         ];
     }
 }
