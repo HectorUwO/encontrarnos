@@ -41,20 +41,11 @@ Encontrarnos es una plataforma para apoyar la búsqueda e identificación de per
   </tr>
 </table>
 
-<table>
-  <tr>
-    <td align="center"><img src="docs/screenshots/movil-inicio.webp" alt="Inicio en el teléfono" width="260" /><br><sub>Inicio en el teléfono</sub></td>
-    <td align="center"><img src="docs/screenshots/movil-admin.webp" alt="Panel de administración en el teléfono" width="260" /><br><sub>Panel en el teléfono</sub></td>
-  </tr>
-</table>
-
 > Las capturas de solicitudes y del panel usan cuentas y personas ficticias. Las fichas reales no se muestran aquí.
 
 ### El panel de administración
 
 El resumen empieza por lo que espera una decisión: cuántas solicitudes hay por revisar (con las más antiguas primero) y cuántos usuarios no han verificado su correo. El menú lateral lleva una insignia con las solicitudes pendientes.
-
-![Revisión de solicitudes](docs/screenshots/admin-solicitudes.webp)
 
 Al aprobar o rechazar una solicitud se envía un correo a quien la mandó. El primer administrador se crea con `php artisan admin:create correo@ejemplo.com`.
 
